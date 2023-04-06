@@ -1,0 +1,58 @@
+project:
+  type: website
+  output-dir: docs
+freeze: false
+website:
+  title: "Research Notes for Sanghoon Park"
+  description: "Rough Ideas and Preliminary Analyses"
+  favicon: /media/icon.svg
+  image: /media/social.png
+  site-url: https://rlille.fr
+  repo-url: https://github.com/pherephobia/research_notes
+  repo-actions: [edit, issue]
+  open-graph:
+    title: "R Lille"
+    description: "Groupe des Utilisateurs•rices de R de Lille"
+    image: /media/social.png
+  twitter-card:
+    title: "R Lille"
+    description: "Groupe des Utilisateurs•rices de R de Lille"
+    image: /media/social.png
+    site: "@RLilleRUG"
+    creator: "@MickaelCanouil"
+    card-style: summary_large_image
+  comments: 
+    utterances:
+      repo: mcanouil/rlille.fr
+  page-navigation: true
+  page-footer:
+    left: |
+      Powered by [Quarto](https://quarto.org).
+    center: |
+      &copy; 2022 R Lille (R User Group).  
+      License: [CC BY NC SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0).
+    right: |
+      Supported by [<img src="/media/RConsortium_Horizontal_Pantone.png" alt="R Consortium Logo" style="height:1.5em;"/>](https://www.r-consortium.org/).
+    border: true
+  navbar:
+    search: true
+    logo: media/icon.svg
+    right:
+      - text: À Propos
+        href: about.qmd
+      - text: "{{< fa brands meetup >}}"
+        href: https://www.meetup.com/R-Lille/
+      - text: "{{< fa brands github >}}"
+        href: https://github.com/RLille/
+      - text: "{{< fa brands twitter >}}"
+        href: https://twitter.com/RLille_RUG
+      - text: "{{< fa brands youtube >}}"
+        href: https://www.youtube.com/c/RLille
+      - text: "{{< fa brands slack >}}"
+        href: https://r-grrr.slack.com/archives/C042K6XB34G
+format:
+  html:
+    theme: simplex
+    css: styles.css
+    lang: fr
+    date-format: long

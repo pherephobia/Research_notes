@@ -1,0 +1,23 @@
+[
+  {
+    "objectID": "about.html",
+    "href": "about.html",
+    "title": "Qu’est-ce que R Lille ?",
+    "section": "",
+    "text": "R Lille est le groupe des utilisateurs•rices de R de Lille (et sa région) et a été créé début février 2020.\nVous utilisez R pour le travail et/ou le loisir ? Vous êtes curieux, débutant ou expert en R ? Vous êtes localisé sur Lille et sa périphérie, ou simplement de passage ?\nEt plus important encore, vous avez envie d’échanger sur R et les nombreuses possibilités qu’offre ce logiciel et ses plus de 17 milles extensions ?\nSi la réponse est “oui” à l’une de ces questions, rejoignez-nous sur Meetup sans plus tarder !"
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Research Notes for Sanghoon Park",
+    "section": "",
+    "text": "Bienvenue à R Lille\n\n\n\n\n\n\n\nActualités\n\n\nFrançais\n\n\n \n\n\n\n\n31 janvier 2020\n\n\nMickaël CANOUIL\n\n\n\n\n\n\nAucun article correspondant"
+  },
+  {
+    "objectID": "posts/2020-01-31-rlille-welcome/index.html",
+    "href": "posts/2020-01-31-rlille-welcome/index.html",
+    "title": "Bienvenue à R Lille",
+    "section": "",
+    "text": "Bonjour à toutes et tous,\nPour information, depuis très récemment, il existe un groupe des utilisateurs•rices du logiciel/langage R à Lille.\n\n\n\nAffiche Événement\n\n\n\nR Lille\nVous utilisez R pour le travail et/ou le loisir ?\nVous êtes curieux, débutant ou expert en R ?\nVous êtes localisé sur Lille et sa périphérie, ou simplement de passage ?\nEt plus important encore, vous avez envie d’échanger sur R et les nombreuses possibilités qu’offre ce logiciel et ses plus de 17 milles extensions ?\nSi la réponse est “oui” à l’une de ses questions, rejoignez-nous sans plus tarder !\n\nL’idée du groupe (soutenu par le R Consortium, https://www.r-consortium.org/) est de mettre en relation les utilisateurs•rices de R de Lille et sa région et ce peu importe le domaine d’application ou le niveau des utilisateurs•rices en question.\n\n\n\nCe groupe est présent sur la plateforme meetup : https://meetup.com/R-Lille/\nMeetup (inscription gratuite) est un service permettant d’organiser des évènements au sein de groupe avec des thématiques données.\nLe meilleur moyen d’être tenu au courant des événements de R Lille est de vous inscrire sur meetup pour recevoir les informations via la liste de diffusion du groupe.\nLe groupe prévoit de mettre à disposition le matériel utilisé lors de ces prochaines réunions sur GitHub : https://github.com/RLille.\nLes diapositives de la réunion d’information du vendredi 31 janvier sont d’ores et déjà disponible (https://github.com/RLille/meetups).\nGitHub (inscription gratuite) est une plateforme de développement rassemblant des millions de développeurs et permettant de découvrir, partager et développer de meilleur outils par un système de suivi de modification (Git).\nÀ bientôt !\nMathilde BOISSEL, Julien HAMONIER et Mickaël CANOUIL"
+  }
+]

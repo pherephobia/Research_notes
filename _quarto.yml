@@ -5,10 +5,10 @@ freeze: false
 website:
   title: "Research Notes for Sanghoon Park"
   description: "Rough Ideas and Preliminary Analyses"
-  favicon: /media/icon.svg
+  favicon: /media/favicon.ico
   image: /media/social.png
-  site-url: https://rlille.fr
-  repo-url: https://github.com/pherephobia/research_notes
+  #site-url: https://rlille.fr
+  repo-url: https://github.com/pherephobia/Research_notes
   repo-actions: [edit, issue]
   open-graph:
     title: "R Lille"
@@ -23,36 +23,36 @@ website:
     card-style: summary_large_image
   comments: 
     utterances:
-      repo: mcanouil/rlille.fr
+      repo: pherephobia/Research_notes
   page-navigation: true
   page-footer:
     left: |
       Powered by [Quarto](https://quarto.org).
-    center: |
-      &copy; 2022 R Lille (R User Group).  
-      License: [CC BY NC SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0).
-    right: |
-      Supported by [<img src="/media/RConsortium_Horizontal_Pantone.png" alt="R Consortium Logo" style="height:1.5em;"/>](https://www.r-consortium.org/).
+#    center: |
+#      &copy; 2022 R Lille (R User Group).  
+#      License: [CC BY NC SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0).
+#    right: |
+#      Supported by [<img src="/media/RConsortium_Horizontal_Pantone.png" alt="R Consortium Logo" style="height:1.5em;"/>](https://www.r-consortium.org/).
     border: true
   navbar:
     search: true
-    logo: media/icon.svg
+    logo: media/favicon.ico
     right:
-      - text: À Propos
+      - text: About
         href: about.qmd
-      - text: "{{< fa brands meetup >}}"
-        href: https://www.meetup.com/R-Lille/
+#      - text: "{{< fa brands meetup >}}"
+#        href: https://www.meetup.com/R-Lille/
       - text: "{{< fa brands github >}}"
-        href: https://github.com/RLille/
+        href: https://github.com/pherephobia/
       - text: "{{< fa brands twitter >}}"
-        href: https://twitter.com/RLille_RUG
-      - text: "{{< fa brands youtube >}}"
-        href: https://www.youtube.com/c/RLille
-      - text: "{{< fa brands slack >}}"
-        href: https://r-grrr.slack.com/archives/C042K6XB34G
+        href: https://twitter.com/pherephobia
+#      - text: "{{< fa brands youtube >}}"
+#        href: https://www.youtube.com/c/RLille
+#      - text: "{{< fa brands slack >}}"
+#        href: https://r-grrr.slack.com/archives/C042K6XB34G
 format:
   html:
     theme: simplex
     css: styles.css
-    lang: fr
+    lang: en
     date-format: long

@@ -78,36 +78,26 @@ tech_table |> arrange(desc(`Field of technology`)) |>
 
 ## Technology classification
 
+I used a combination of different criteria to classify the technologies into low-tech, middle-level techs, and high-techs. These criteria include: 
 
++ Complexity and sophistication of the technology: Generally, the more complex and sophisticated the technology is, the higher the level of tech it belongs to. 
+
++ Level of innovation and research and development (R&D) involved: High-techs are typically associated with cutting-edge innovation and intensive R&D activities, while  low-techs are often considered more mature and established technologies.
+
++ Economic impact and industrial relevance: High-techs are often associated with strategic industries ## and high-value-added products, while low-techs are often associated with more traditional and low-value-added sectors.
+
+Based on these criteria, I classified the technologies into three broad categories as follows:
+
++ Low-tech: These are technologies that are relatively simple, mature, and established, and typically involve low levels of innovation and R&D. They are often associated with traditional and low-value-added sectors such as construction, transportation, and textiles.
+
++ Middle-level techs: These are technologies that are more complex and sophisticated than low-techs but not as cutting-edge and innovative as high-techs. They typically involve moderate levels of innovation and R&D and are associated with a wide range of sectors, such as manufacturing, healthcare, and logistics.
+
++ High-techs: These are technologies that are characterized by high levels of innovation and R&D, cutting-edge research and development, and strategic importance for the economy. They are typically associated with high-value-added industries such as biotechnology, information technology, and telecommunications.
+
+You can find the sample of classified technologies of n = 1,000:
 
 ```{r}
-#| eval: false
-
-
-# ICT / Artificial Intelligence / Biotechnology / Nanotechnology / Environment-related technologies / Health
-
-## I used a combination of different criteria to classify the technologies into low-tech, 
-## middle-level techs, and high-techs. These criteria include: Complexity and sophistication of the 
-## technology: Generally, the more complex and sophisticated the technology is, the higher the level of tech it belongs to.
-## Level of innovation and research and development (R&D) involved: High-techs are typically 
-## associated with cutting-edge innovation and intensive R&D activities, while low-techs are 
-## often considered more mature and established technologies.
-## Economic impact and industrial relevance: High-techs are often associated with strategic industries
-## and high-value-added products, while low-techs are often associated with more traditional and 
-## low-value-added sectors.
-## Based on these criteria, I classified the technologies into three broad categories as follows:
-## Low-tech: These are technologies that are relatively simple, mature, and established, and 
-##           typically involve low levels of innovation and R&D. They are often associated with traditional
-##           and low-value-added sectors such as construction, transportation, and textiles.
-## Middle-level techs: These are technologies that are more complex and sophisticated than low-techs 
-##                     but not as cutting-edge and innovative as high-techs. They typically involve 
-##                     moderate levels of innovation and R&D and are associated with a wide range of 
-##                     sectors, such as manufacturing, healthcare, and logistics.
-## High-techs: These are technologies that are characterized by high levels of innovation and R&D, 
-##             cutting-edge research and development, and strategic importance for the economy. 
-##             They are typically associated with high-value-added industries such as biotechnology,
-##             information technology, and telecommunications.
-
+#| echo: false
 patent_long |> mutate(
   Class = case_when(
     `Field of technology` %in% c("Basic communication processes", "Basic materials chemistry",
@@ -128,6 +118,35 @@ patent_long |> mutate(
     T ~ NA_character_
   )
 ) -> patent_long
+
+patent_long |> slice(1:1000) |> DT::datatable()
+```
+
+```{r}
+#| message: false
+#| warning: false
+#| error: false
+#| echo: false
+library(plotly)
+ggthemr::ggthemr("fresh")
+patent_long |> 
+  group_by(Class, year) |>
+  summarize(Average = mean(no_patent, na.rm = T)) |> 
+  mutate(year = as.numeric(year)) |> 
+  ungroup() |> 
+  ggplot(aes(x = year, y = Average, color = Class)) +
+  geom_path() +
+  labs(y = "Average number of patents") +
+  theme(legend.position = c(0.2, 0.9),
+        legend.title = element_blank()) -> p
+ggplotly(p)
+```
+
+
+```{r}
+#| eval: false
+#| echo: false
+
 
 patent_long |> group_by(ccode, year) |> dplyr::filter(!is.na(no_patent)) |> 
   count(`Field of technology`) |> 

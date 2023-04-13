@@ -76,7 +76,9 @@ tech_table |> arrange(desc(`Field of technology`)) |>
   DT::datatable()
 ```
 
-## 
+## Technology classification
+
+
 
 ```{r}
 #| eval: false

@@ -103,7 +103,8 @@ codes. Then, I removed the observations that do not have COW country codes from
 the sample.
 
 ```{r}
-#| echo: false
+#| code-fold: true
+#| code-summary: "Show the code"
 #| warning: false
 #| message: false
 #| error: false
@@ -129,7 +130,8 @@ Comparisons](https://www.wipo.int/export/sites/www/ipstats/en/docs/wipo_ipc_tech
 a report published in WIPO.
 
 ```{r}
-#| echo: false
+#| code-fold: true
+#| code-summary: "Show the code"
 #| warning: false
 #| message: false
 #| error: false
@@ -183,7 +185,8 @@ categories as follows:
 
 ```{r}
 #| eval: true
-#| echo: false
+#| code-fold: true
+#| code-summary: "Show the code"
 #| message: false
 #| warning: false
 #| error: false
@@ -229,18 +232,6 @@ patent_long |>
   theme(legend.position = "top",
         legend.title = element_blank()) -> no_patent_year_raw
 no_patent_year_raw
-
-# patent_long |> 
-#   mutate(year = as.numeric(year)) |> 
-#   group_by(Class, year) |> 
-#   summarize(n = sum(no_patent, na.rm = T)) |> 
-#   ggplot(aes(x = year, y = log(n+1), group = Class, color = Class)) +
-#   geom_line() +
-#   scale_x_continuous(limits = c(1995, 2020)) +
-#   labs(y = "Logged number of patents", x = "Year") +
-#   theme(legend.position = "top",
-#         legend.title = element_blank()) -> no_patent_year_ln
-# no_patent_year_ln
 ```
 
 Using the country-year units of patent data set, I manipulate three-scale
@@ -265,7 +256,8 @@ of their levels. Also, the increasing trends are likely to be driven by
 high-level technologies across different regions.
 
 ```{r}
-#| echo: false
+#| code-fold: true
+#| code-summary: "Show the code"
 #| message: false
 #| warning: false
 #| error: false
@@ -436,7 +428,8 @@ Thus, the baseline sample of patents in technology has five variables including
     `High-tech`.
 
 ```{r}
-#| echo: false
+#| code-fold: true
+#| code-summary: "Show the code"
 #| warning: false
 #| message: false
 #| error: false
@@ -627,7 +620,8 @@ I use `V-Dem` data set to include various political and economic variables.
 -   `v2petersch`: Tertiary school enrollment
 
 ```{r}
-#| echo: false
+#| code-fold: true
+#| code-summary: "Show the code"
 #| warning: false
 vindoc_cy_full |> 
   dplyr::select(country_name, year, 
@@ -742,7 +736,8 @@ different levels of technology.
     outflows (% of GDP)
 
 ```{r}
-#| echo: false
+#| code-fold: true
+#| code-summary: "Show the code"
 qog |> 
   dplyr::select(
     ccodecow, year,
@@ -776,7 +771,8 @@ primarily merged sample
 the first 100 rows of the sample data.
 
 ```{r}
-#| echo: false
+#| code-fold: true
+#| code-summary: "Show the code"
 patent_indoc |> 
   group_by(ccode) |> 
   mutate(lag_patent = dplyr::lag(sum_tech_patent, n = 1, order_by = year),
@@ -846,6 +842,8 @@ patent_indoc |> ungroup() |>
 
 ```{r}
 #| results: hide
+#| code-fold: true
+#| code-summary: "Show the code"
 # Model for H1: Indoctrination leads to less advanced technological developments
 #               because indoctrination emphasizes increasing citizens'
 #               compliance with the regime.
@@ -884,7 +882,8 @@ lm_robust(log(sum_patent+1) ~
 
 ```{r}
 #| results: asis
-#| echo: false
+#| code-fold: true
+#| code-summary: "Show the code"
 texreg::htmlreg(
   list(h1m1, h1m2, h1m3, h1m4, h1m5, h1m6),
   include.ci = F,
@@ -926,6 +925,8 @@ patent_indoc |> ungroup() |>
 
 ```{r}
 #| results: hide
+#| code-fold: true
+#| code-summary: "Show the code"
 #| warning: false
 #| message: false
 #| error: false
@@ -1019,6 +1020,8 @@ we hold the main explanatory variables constant.
 
 ```{r}
 #| results: hide
+#| code-fold: true
+#| code-summary: "Show the code"
 #| warning: false
 #| message: false
 #| error: false
@@ -1118,7 +1121,8 @@ lm_robust(
 
 ```{r}
 #| results: asis
-#| echo: false
+#| code-fold: true
+#| code-summary: "Show the code"
 #| message: false
 #| warning: false
 #| error: false
@@ -1171,8 +1175,6 @@ texreg::htmlreg(
 ```{r}
 #| eval: false
 #| echo: false
-
-
 lm(log(sum_patent+1) ~ v2xed_ed_inpt + I(v2xed_ed_inpt^2) + gdpgrth + log(lag_patent + 1) + 
      resource_rev + e_gdppc + v2edmath + e_boix_regime + 
      #v2x_libdem +

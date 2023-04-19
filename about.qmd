@@ -1,28 +1,30 @@
 ---
-title: "Qu'est-ce que R Lille&nbsp;?"
-image: ./media/icon.svg
+title: "Research Notes for Sanghoon Park"
+image: ./media/favicon.ico
 comments: false
 about:
   template: solana
   links:
-    - text: "{{< fa brands meetup >}} Meetup"
-      href: https://www.meetup.com/R-Lille/
+    #- text: "{{< fa brands meetup >}} Meetup"
+    #  href: https://www.meetup.com/R-Lille/
     - text: "{{< fa brands github >}} GitHub"
-      href: https://github.com/RLille/
-    - text: "{{< fa brands twitter >}} Twitter"
-      href: https://twitter.com/RLille_RUG
-    - text: "{{< fa brands youtube >}} YouTube"
-      href: https://www.youtube.com/c/RLille
-    - text: "{{< fa brands slack >}} Slack"
-      href: https://r-grrr.slack.com/archives/C042K6XB34G
+      href: https://github.com/pherephobia/Research_notes
+    #- text: "{{< fa brands twitter >}} Twitter"
+    #  href: https://twitter.com/RLille_RUG
+    #- text: "{{< fa brands youtube >}} YouTube"
+    #  href: https://www.youtube.com/c/RLille
+    #- text: "{{< fa brands slack >}} Slack"
+    #  href: https://r-grrr.slack.com/archives/C042K6XB34G
 ---
 
-R Lille est le groupe des utilisateurs•rices de R de Lille (et sa région) et a été créé début février 2020.
+I'm a Ph.D. candidate in the Department of Political Science at University of
+South Carolina, Columbia. I received a B.A. and M.A. in political science and
+international relations from Hankuk University of Foreign Studies' Department of
+Political Science and International Relations in 2015 and 2017, respectively.
 
-Vous utilisez R pour le travail et/ou le loisir&nbsp;?
-Vous êtes curieux, débutant ou expert en R&nbsp;?
-Vous êtes localisé sur Lille et sa périphérie, ou simplement de passage&nbsp;?
-
-Et plus important encore, vous avez envie d'échanger sur R et les nombreuses possibilités qu'offre ce logiciel et ses plus de 17 milles extensions&nbsp;?
-
-Si la réponse est "oui" à l'une de ces questions, rejoignez-nous sur [Meetup](https://www.meetup.com/R-Lille/) sans plus tarder&nbsp;!
+My research agenda is situated at the nexus of Comparative Politics and
+International Relations and focuses on autocrats and institutions' interaction,
+emphasizing resource distribution, regime stability, and transitions. I address
+how and under what conditions autocrats use their power to perpetuate their
+rule. My goal is to shed light on the processes that produce seemingly identical
+consequences across democracies and autocracies.

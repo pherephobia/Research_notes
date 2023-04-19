@@ -7,19 +7,19 @@ website:
   description: "Rough Ideas and Preliminary Analyses"
   favicon: /media/favicon.ico
   image: /media/social.png
-  #site-url: https://rlille.fr
+  site-url: https://pherephobia.github.io/Research_notes/
   repo-url: https://github.com/pherephobia/Research_notes
   repo-actions: [edit, issue]
   open-graph:
-    title: "R Lille"
-    description: "Groupe des Utilisateurs•rices de R de Lille"
+    title: "Research Notes"
+    description: "It is an archive for Sanghoon's research notes."
     image: /media/social.png
   twitter-card:
-    title: "R Lille"
-    description: "Groupe des Utilisateurs•rices de R de Lille"
+    title: "Research Notes"
+    description: "It is an archive for Sanghoon's research notes."
     image: /media/social.png
-    site: "@RLilleRUG"
-    creator: "@MickaelCanouil"
+    site: "https://pherephobia.github.io/Research_notes/"
+    creator: "@pherephobia"
     card-style: summary_large_image
   comments: 
     utterances:
@@ -55,8 +55,4 @@ format:
     theme: simplex
     css: styles.css
     lang: en
-<<<<<<< Updated upstream
     date-format: long
-=======
-    date-format: long
->>>>>>> Stashed changes

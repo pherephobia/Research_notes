@@ -9,9 +9,5 @@ title-block-banner: true
 
 comments:
   giscus:
-<<<<<<< Updated upstream
-    repo: pherephobia/Research_notes
-=======
     repo: pherehpobia/Research_notes
->>>>>>> Stashed changes
     category: Blog

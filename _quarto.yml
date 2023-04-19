@@ -55,4 +55,8 @@ format:
     theme: simplex
     css: styles.css
     lang: en
+<<<<<<< Updated upstream
     date-format: long
+=======
+    date-format: long
+>>>>>>> Stashed changes

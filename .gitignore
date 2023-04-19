@@ -3,3 +3,5 @@ Thumbs.db
 /.quarto/
 /_freeze/
 .Rproj.user
+/posts/2023-04-12-indoc/data/qog.csv
+*.dta

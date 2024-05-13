@@ -1,0 +1,222 @@
+pacman::p_load(ggplot2, hrbrthemes, hexSticker,
+viridis, futurevisions, scales, maps,
+mapproj, tidyverse)
+RN = png::readPNG('stickers/research64.png')
+getwd()
+RN = png::readPNG('D:/Dropbox/Scholar/0_personal/HP/shPark/stickers/research64.png')
+RN = grid::rasterGrob(RN, interpolate = TRUE)
+futurevisions::show_palette("mars")
+sticker(PR, package="Research Note", h_fill = '#BDC6DC',h_color = '#AD2E37',
+p_size=20, s_x=1, s_y=0.7, s_width=2, s_height=1,
+p_family = "Aller_Lt", p_color = '#AD2E37',
+filename = 'stickers/Research Note.png')
+sticker(RN, package="Research Note", h_fill = '#BDC6DC',h_color = '#AD2E37',
+p_size=20, s_x=1, s_y=0.7, s_width=2, s_height=1,
+p_family = "Aller_Lt", p_color = '#AD2E37',
+filename = 'stickers/Research Note.png')
+getwd()
+RN = png::readPNG('D:/Dropbox/Scholar/0_personal/HP/shPark/stickers/research64.png')
+RN = grid::rasterGrob(RN, interpolate = TRUE)
+futurevisions::show_palette("mars")
+sticker(RN, package="Research Note", h_fill = 'white',h_color = '#AD2E37',
+p_size=16, s_x=1, s_y=0.7, s_width=2, s_height=1,
+p_family = "Aller_Lt", p_color = '#AD2E37',
+filename = 'stickers/Research Note.png')
+getwd()
+sticker(RN, package="Research Note", h_fill = 'white',h_color = '#AD2E37',
+p_size=16, s_x=1, s_y=0.7, s_width=1.8, s_height=0.8,
+p_family = "Aller_Lt", p_color = '#AD2E37',
+filename = 'stickers/Research Note.png')
+RN = png::readPNG('D:/Dropbox/Scholar/0_personal/HP/shPark/stickers/iconmonstr-note-23-240.png')
+RN = grid::rasterGrob(RN, interpolate = TRUE)
+futurevisions::show_palette("mars")
+sticker(RN, package="Research Note", h_fill = 'white',h_color = '#AD2E37',
+p_size=16, s_x=1, s_y=0.7, s_width=1.8, s_height=0.8,
+p_family = "Aller_Lt", p_color = '#AD2E37',
+filename = 'stickers/Research Note.png')
+library(tidyverse)
+patent <- googlesheets4::read_sheet("https://docs.google.com/spreadsheets/d/1NgvhKCvqUI-_ciO2uvsskUZ4HKZhUNbxmEeOTkTMyGg/edit?usp=sharing")
+patent <- googlesheets4::read_sheet("https://docs.google.com/spreadsheets/d/1NgvhKCvqUI-_ciO2uvsskUZ4HKZhUNbxmEeOTkTMyGg/edit?usp=sharing")
+data.table::data.table(patent)
+patent_long |> pull(`Field of technology`) |> table()
+#| echo: false
+#| warning: false
+#| message: false
+#| error: false
+patent |>
+mutate(
+Origin = case_when(
+Origin == "T체rkiye" ~ "Turkey",
+T ~ Origin),
+ccode = countrycode::countrycode(Origin, "country.name", "cown")
+) |> drop_na(ccode) -> patent
+patent |> dplyr::select(-`Origin(Code)`) |>
+tidyr::gather(year, no_patent, -Origin, -`Field of technology`, -ccode) ->
+patent_long
+patent_long |> pull(`Field of technology`) |> table()
+patent_long |> pull(`Field of technology`) |> kable()
+patent_long |> pull(`Field of technology`) |> table() |>
+knitr::kable()
+patent_long |> pull(`Field of technology`) |>
+janitor::tabyl()
+patent_long |> pull(`Field of technology`) |>
+janitor::tabyl() |> mutate(percent = round(percent, 2))
+patent_long |> pull(`Field of technology`) |>
+janitor::tabyl() |> mutate(percent = round(percent, 3))
+patent_long |> pull(`Field of technology`) |>
+janitor::tabyl() |> mutate(percent = round(percent, 3)) -> tech_table
+names(tech_table) <- c("Field of technology", "N", "%")
+tech_table |> arrange(desc(`Field of technology`))
+tech_table |> arrange(desc(`Field of technology`)) |>
+DT::datatable()
+length(unique(patent_long$`Field of technology`))
+library(tidyverse)
+patent_long |> mutate(
+Class = case_when(
+`Field of technology` %in% c("Basic communication processes", "Basic materials chemistry",
+"Civil engineering", "Furniture, games", "Handling", "Textile and paper machines",
+"Thermal processes and apparatus", "Transport") ~ "Low-tech",
+`Field of technology` %in% c("Audio-visual technology", "Chemical engineering", "Electricity",
+"Engines, pumps, turbines", "Food chemistry", "Machine tools",
+"Measurement", "Mechanical elements", "Medical technology",
+"Optical instruments", "Packaging", "Paper and printing",
+"Surface technology, coating") ~ "Middle-tech",
+`Field of technology` %in% c("Analysis of biological materials", "Biotechnology", "Computer technology",
+"Control", "Digital communication", "Electrical machinery, apparatus, energy",
+"Environmental technology", "IT methods for management",
+"Macromolecular chemistry, polymers", "Materials, metallurgy",
+"Micro-structural and nano-technology", "Optics", "Organic fine chemistry",
+"Other consumer goods", "Other special machines", "Pharmaceuticals",
+"Semiconductors", "Telecommunications") ~ "High-tech",
+T ~ NA_character_
+)
+) -> patent_long
+patent_long |> group_by(ccode, year) |> dplyr::filter(!is.na(no_patent)) |>
+count(`Field of technology`) |>
+summarize(diversity = sum(n, na.rm = T)) -> patent_diversity
+patent_long |>
+group_by(Origin, ccode, year) |>
+summarize(
+sum_patent = sum(no_patent, na.rm = T)) -> patent_long_sum
+patent_diversity_long <- patent_long_sum |> left_join(
+patent_diversity, by = c("ccode", "year")
+)
+patent_diversity_long <- patent_diversity_long |> mutate(diversity = replace_na(diversity, 0))
+patent_diversity_long <- patent_diversity_long |> mutate(diversity = replace_na(diversity, 0))
+patent_long |> left_join(
+patent_diversity_long, by = c("ccode", "year")
+) -> sample
+DT::datatable(patent_long)
+patent_long |> slice(1:1000) |> DT::datatable()
+patent_long |>
+group_by(Class, year) |> summarize(
+n = n()
+)
+patent_long |>
+group_by(Class, year) |> summarize(
+sum(no_patent, na.rm = T)
+)
+patent_long |>
+group_by(Class, year) |> summarize(
+Average = mean(no_patent, na.rm = T)
+)
+ggplot(aes(x = year, y = Average, color = Class)) +
+geom_line()
+patent_long |>
+group_by(Class, year) |> summarize(Average = mean(no_patent, na.rm = T))
+ggplot(aes(x = year, y = Average, color = Class))
+patent_long |>
+group_by(Class, year) |> summarize(Average = mean(no_patent, na.rm = T))
+ggplot(aes(x = year, y = Average, color = Class))
+patent_long |>
+group_by(Class, year) |> summarize(Average = mean(no_patent, na.rm = T)) |>
+ggplot(aes(x = year, y = Average, color = Class)) +
+geom_line()
+patent_long |>
+group_by(Class, year) |>
+summarize(Average = mean(no_patent, na.rm = T)) |>
+ungroup() |>
+ggplot(aes(x = year, y = Average, color = Class)) +
+geom_line()
+patent_long |>
+group_by(Class, year) |>
+summarize(Average = mean(no_patent, na.rm = T)) |>
+ungroup() |>
+ggplot(aes(x = year, y = Average, color = Class)) +
+geom_path()
+patent_long
+patent_long |>
+group_by(Class, year) |>
+summarize(Average = mean(no_patent, na.rm = T)) |>
+mutate(year = as.numeric(year)) |>
+ungroup() |>
+ggplot(aes(x = year, y = Average, color = Class)) +
+geom_path()
+library(plotly)
+patent_long |>
+group_by(Class, year) |>
+summarize(Average = mean(no_patent, na.rm = T)) |>
+mutate(year = as.numeric(year)) |>
+ungroup() |>
+ggplot(aes(x = year, y = Average, color = Class)) +
+geom_path()
+patent_long |>
+group_by(Class, year) |>
+summarize(Average = mean(no_patent, na.rm = T)) |>
+mutate(year = as.numeric(year)) |>
+ungroup() |>
+ggplot(aes(x = year, y = Average, color = Class)) +
+geom_path() -> p
+ggplotly(p)
+ggthemr::ggthemr("fresh")
+patent_long |>
+group_by(Class, year) |>
+summarize(Average = mean(no_patent, na.rm = T)) |>
+mutate(year = as.numeric(year)) |>
+ungroup() |>
+ggplot(aes(x = year, y = Average, color = Class)) +
+geom_path() -> p
+ggplotly(p)
+patent_long |>
+group_by(Class, year) |>
+summarize(Average = mean(no_patent, na.rm = T)) |>
+mutate(year = as.numeric(year)) |>
+ungroup() |>
+ggplot(aes(x = year, y = Average, color = Class)) +
+geom_path() +
+labs(y = "Average number of patents") +
+theme(legend.position = c(0.2, 0.9),
+legend.title = element_blank()) -> p
+ggplotly(p)
+patent_long |>
+group_by(Class, year) |>
+summarize(Average = mean(no_patent, na.rm = T)) |>
+mutate(year = as.numeric(year)) |>
+ungroup() |>
+ggplot(aes(x = year, y = Average, color = Class)) +
+geom_path() +
+labs(y = "Average number of patents") +
+theme(legend.position = c(0.2, 0.9),
+legend.title = element_blank()) -> p
+ggplotly(p)
+patent_long |>
+group_by(Class, year) |>
+summarize(Average = mean(no_patent, na.rm = T)) |>
+mutate(year = as.numeric(year)) |>
+ungroup() |>
+ggplot(aes(x = year, y = Average, color = Class)) +
+geom_path() +
+labs(y = "Average number of patents") +
+theme(legend.position = c(0.2, 0.9),
+legend.title = element_blank())
+patent_long |>
+group_by(Class, year) |>
+summarize(Average = mean(no_patent, na.rm = T)) |>
+mutate(year = as.numeric(year)) |>
+ungroup() |>
+ggplot(aes(x = year, y = Average, color = Class)) +
+geom_path() +
+labs(y = "Average number of patents") +
+theme(legend.position = c(0.2, 0.9),
+legend.title = element_blank()) -> p
+ggplotly(p)

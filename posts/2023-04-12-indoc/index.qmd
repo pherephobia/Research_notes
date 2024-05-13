@@ -1,8 +1,11 @@
 ---
 title: "Education or Indoctrination?"
 author: "[Sanghoon Park](https://sanghoon-park.com/)"
-date: "2023-04-06"
+date: today
+date-format: long
 categories:
+  - Autocracy
+  - Democracy
   - Patent
   - Technology
   - Education
@@ -43,6 +46,15 @@ indoctrination is determined on the demand side rather than the supply side. If
 the system's beneficiaries (or indoctrinated) children have developed their
 capability, driving the country forward, even indoctrination strategy works as
 an education.
+
+Thus, I conceptualize indoctrination and education as follows:
+
+**Education**: *a process of facilitating learning and the development of
+skills, knowledge, critical thinking, and personal growth.*
+
+**Indoctrination**: *a method by which individuals or groups are taught to
+accept a set of beliefs uncritically, often for the purpose of promoting a
+specific agenda or maintaining control.*
 
 # Theoretical Expectation
 
@@ -85,375 +97,122 @@ technology.
 
 ```{r}
 #| include: false
-library(tidyverse)
-patent <- googlesheets4::read_sheet("https://docs.google.com/spreadsheets/d/1NgvhKCvqUI-_ciO2uvsskUZ4HKZhUNbxmEeOTkTMyGg/edit?usp=sharing")
-vindoc_cy_full <- readRDS("~/Library/CloudStorage/Dropbox/Scholar/2_Graduates/Research_notes/posts/2023-04-12-indoc/data/vindoc_cy_full.rds")
-ggthemr::ggthemr('fresh')
-vdemdata::vdem -> vdem
-qog <- readRDS("~/Library/CloudStorage/Dropbox/Scholar/2_Graduates/Research_notes/posts/2023-04-12-indoc/data/qog.rds")
+knitr::opts_chunk$set(message = F, warning = F, error = F)
 ```
 
 ```{r}
-#| echo: false
-DT::datatable(patent)
+library(estimatr);library(geomtextpath); library(tidyverse)
+theme_set(theme_bw())
+
+patent <- rio::import("INPACT-S.dta")
+vindoc_cy_full <- readRDS("data/vindoc_cy_full.rds")
+vdem <- vdemdata::vdem
+qog <- rqog::read_qog("standard", "time-series", year = 2023)
 ```
 
-I transformed the data into country-year structure, manipulating COW country
-codes. Then, I removed the observations that do not have COW country codes from
-the sample.
+I created COW country codes. Then, I made two different set of data frame. The
+first data frame shows the number of patents based on country-year unit
+(`patent_number`). The second data frame calculates the number of patents by
+country-year-section unit (`patent_diverse`).
 
 ```{r}
 #| code-fold: true
 #| code-summary: "Show the code"
-#| warning: false
-#| message: false
-#| error: false
 patent |> 
-  mutate(
-    Origin = case_when(
-      Origin == "T체rkiye" ~ "Turkey",
-      T ~ Origin),
-    ccode = countrycode::countrycode(Origin, "country.name", "cown")
-) |> drop_na(ccode) -> patent
+  mutate(COWcode = 
+           countrycode::countrycode(appln_auth_iso3, "iso3c", "cown")) ->
+  patent
+
+patent |> 
+  group_by(appln_auth_iso3, appln_filing_year) |> 
+  summarize(patent_n = n()) |> ungroup() -> 
+  patent_number
+
+patent |> 
+  group_by(appln_auth_iso3, appln_filing_year, isic_rev3_2) |> 
+  count() |> 
+  mutate(isic_rev3_2_fct = 
+           factor(isic_rev3_2,
+                  levels = c(sort(unique(patent$isic_rev3_2))))) -> 
+  patent_diverse
+
+patent_diverse |> 
+  ungroup() -> patent_diverse
+
+head(patent_diverse)
+```
+
+Also, I coded a function to transform a categorical variable into multiple
+dummies: `create_dummies().`
+
+```{r}
+create_dummies <- function(df, a_factor) {
   
-patent |> dplyr::select(-`Origin(Code)`) |> 
-  tidyr::gather(year, no_patent, -Origin, -`Field of technology`, -ccode) ->
-  patent_long
-
-DT::datatable(patent_long)
+  if (!is.data.frame(df) | !is_tibble(df)) stop('first arg must be data.frame')
+  
+  new_df <- df
+  new_df <- new_df[ , a_factor] %>%
+    select(my_factor = 1)
+  
+  if (!is.factor(new_df$my_factor)) stop('second arg must be a factor')
+  
+  factor_levels <- levels(new_df$my_factor)
+  
+  for (i in 1:length(factor_levels)) {
+    var <- new_df$my_factor == factor_levels[i]
+    new_df[[paste0(factor_levels[i], '_', i)]] <- var
+  }
+  
+  new_df <- new_df %>% select(-my_factor) %>%
+    mutate_all(as.integer)
+  df <- bind_cols(df, new_df)
+  
+  return(df)
+}
 ```
 
-In the sample, WIPO provides `Field of technology` that the published patents
-should belong to. There are 35 different technologies of patents in the sample.
-I rely on [Concept of a Technology Classification for Country
-Comparisons](https://www.wipo.int/export/sites/www/ipstats/en/docs/wipo_ipc_technology.pdf),
-a report published in WIPO.
+By applying the function to the `patent_diverse` data frame, I was able to
+generate a large data frame that shows whether a country had patents in specific
+industrial categories in a given year.
 
 ```{r}
 #| code-fold: true
 #| code-summary: "Show the code"
-#| warning: false
-#| message: false
-#| error: false
+create_dummies(patent_diverse, "isic_rev3_2_fct") -> patent_diverse_wide
 
-patent_long |> pull(`Field of technology`) |> 
-  janitor::tabyl() |> mutate(percent = round(percent, 3)) -> tech_table
-names(tech_table) <- c("Field of technology", "N", "%")  
-tech_table |> arrange(desc(`Field of technology`)) |> 
-  DT::datatable()
+head(patent_diverse_wide);names(patent_diverse_wide)
 ```
 
-## Technology Classification
-
-I used a combination of different criteria to classify the technologies into
-low-tech, middle-level techs, and high-techs. These criteria include followings:
-
--   Complexity and sophistication of the technology: Generally, the more complex
-    and sophisticated the technology is, the higher the level of tech it belongs
-    to.
-
--   Level of innovation and research and development (R&D) involved: High-techs
-    are typically associated with cutting-edge innovation and intensive R&D
-    activities, while low-techs are often considered more mature and established
-    technologies.
-
--   Economic impact and industrial relevance: High-techs are often associated
-    with strategic industries and high-value-added products, while low-techs are
-    often associated with more traditional and low-value-added sectors.
-
-Based on these criteria, I classified the technologies into three broad
-categories as follows:
-
--   *Low-tech*: These are technologies that are relatively simple, mature, and
-    established, and typically involve low levels of innovation and R&D. They
-    are often associated with traditional and low-value-added sectors such as
-    construction, transportation, and textiles.
-
--   *Middle-level techs*: These are technologies that are more complex and
-    sophisticated than low-techs but not as cutting-edge and innovative as
-    high-techs. They typically involve moderate levels of innovation and R&D and
-    are associated with a wide range of sectors, such as manufacturing,
-    healthcare, and logistics.
-
--   *High-techs*: These are technologies that are characterized by high levels
-    of innovation and R&D, cutting-edge research and development, and strategic
-    importance for the economy. They are typically associated with
-    high-value-added industries such as biotechnology, information technology,
-    and telecommunications.
-
-### Trends in Technology Patents in Numbers
-
-```{r}
-#| eval: true
-#| code-fold: true
-#| code-summary: "Show the code"
-#| message: false
-#| warning: false
-#| error: false
-#| layout-ncol: 1
-#| fig-cap: "Number of the patent by different levels of technology (yearly)"
-patent_long |> mutate(
-  Class = case_when(
-    `Field of technology` %in% 
-      c("Basic communication processes", "Basic materials chemistry",
-        "Civil engineering", "Furniture, games", "Handling", 
-        "Textile and paper machines",
-        "Thermal processes and apparatus", "Transport") ~ "Low-tech",
-    `Field of technology` %in% 
-      c("Audio-visual technology", "Chemical engineering", "Electricity", 
-        "Engines, pumps, turbines", "Food chemistry", "Machine tools",
-        "Measurement", "Mechanical elements", "Medical technology",
-        "Optical instruments", "Packaging", "Paper and printing", 
-        "Surface technology, coating") ~ "Middle-tech",
-    `Field of technology` %in% 
-      c("Analysis of biological materials", "Biotechnology", 
-        "Computer technology", "Control", "Digital communication", 
-        "Electrical machinery, apparatus, energy", 
-        "Environmental technology", "IT methods for management", 
-        "Macromolecular chemistry, polymers", "Materials, metallurgy", 
-        "Micro-structural and nano-technology", "Optics",
-        "Organic fine chemistry", "Other consumer goods", 
-        "Other special machines", "Pharmaceuticals",
-        "Semiconductors", "Telecommunications") ~ "High-tech",
-    T ~ NA_character_),
-  Class = factor(Class, levels = c("Low-tech", 
-                                   "Middle-tech",
-                                   "High-tech"))) -> 
-  patent_long
-
-patent_long |> 
-  mutate(year = as.numeric(year)) |> 
-  group_by(Class, year) |> 
-  summarize(n = sum(no_patent, na.rm = T)) |> 
-  ggplot(aes(x = year, y = n, group = Class, color = Class)) +
-  geom_line() +
-  scale_x_continuous(limits = c(1995, 2020)) +
-  labs(y = "Number of patents", x = "Year") +
-  theme(legend.position = "top",
-        legend.title = element_blank()) -> no_patent_year_raw
-no_patent_year_raw
-```
-
-Using the country-year units of patent data set, I manipulate three-scale
-measurements of classification of technologies. In the raw number of patents for
-different levels of technologies by year, we can observe that the number of
-patents for high-level technologies has increased drastically than other levels
-of technologies.
-
-### Trends in Technology Patents in Diversities
-
-Following that, I manipulate a variable called `diversity` to demonstrate how
-different types of patents have been published over time. The majority of
-regions show an increasing trend in the diversity of technology patents, but
-Sub-Saharan Africa has little variation, implying that it is lagging behind in
-technological development. Also, Western European countries and North America
-have the greatest diversities in patents over time. It makes me think the
-possible technological inequalities.
-
-When I disaggregate the patents into different levels of technologies, it
-clarifies that sub-Saharan Africa is underdevelopment in technologies regardless
-of their levels. Also, the increasing trends are likely to be driven by
-high-level technologies across different regions.
+Next, I created a variable called `diverse` that takes the sum of dummy
+variables representing industrial section codes. `diverse` will show whether a
+patent belongs to which section of industry in a country in a given year. I
+aggregated the data frame at the country-year level to show how many sections a
+country's patents cover in a given year. The `diverse` variable ranges between 0
+and 36.
 
 ```{r}
 #| code-fold: true
 #| code-summary: "Show the code"
-#| message: false
-#| warning: false
-#| error: false
-#| layout-ncol: 1
-#| fig-subcap: 
-#|   - "Diversity of the patent of technology by different region (yearly)"
-#|   - "Diversity of the patent of technology by different levels and region (yearly)"
+patent_diverse_wide |> 
+  rowwise() |>  
+  mutate(diverse = sum(c_across(6:36))) |> 
+  dplyr::select(c(1, 2, 3, 5, 37)) |> 
+  ungroup() -> patent_diverse_short
 
-patent_long |> 
-  group_by(ccode, year) |> 
-  dplyr::filter(!is.na(no_patent)) |> 
-  count(`Field of technology`) |> 
-  summarize(diversity = sum(n, na.rm = T)) -> 
-  patent_diversity
+patent_diverse_short |> 
+  group_by(appln_auth_iso3, appln_filing_year) |> 
+  summarize(diverse = length(isic_rev3_2_fct)) -> patent_diverse_sum
 
-patent_long |> 
-  mutate(
-    Class = case_when(
-      `Field of technology` %in% 
-        c("Basic communication processes", 
-          "Basic materials chemistry",
-          "Civil engineering", "Furniture, games", 
-          "Handling", 
-          "Textile and paper machines",
-          "Thermal processes and apparatus", "Transport") ~
-        "Low-tech",
-      `Field of technology` %in% 
-        c("Audio-visual technology", "Chemical engineering",
-          "Electricity", "Engines, pumps, turbines",
-          "Food chemistry", "Machine tools",
-          "Measurement", "Mechanical elements", 
-          "Medical technology",
-          "Optical instruments", "Packaging", 
-          "Paper and printing", 
-          "Surface technology, coating") ~ 
-        "Middle-tech",
-      `Field of technology` %in% 
-        c("Analysis of biological materials", 
-          "Biotechnology", "Computer technology", 
-          "Control", "Digital communication", 
-          "Electrical machinery, apparatus, energy", 
-          "Environmental technology", 
-          "IT methods for management", 
-          "Macromolecular chemistry, polymers", 
-          "Materials, metallurgy", 
-          "Micro-structural and nano-technology", "Optics",
-          "Organic fine chemistry", "Other consumer goods", 
-          "Other special machines", "Pharmaceuticals",
-          "Semiconductors", "Telecommunications") ~ 
-        "High-tech",
-    T ~ NA_character_),
-  Class = factor(Class, levels = c("Low-tech", 
-                                   "Middle-tech",
-                                   "High-tech"))) |> group_by(ccode, year, Class) |> 
-  dplyr::filter(!is.na(no_patent)) |> 
-  count(`Field of technology`) |> 
-  summarize(diversity = sum(n, na.rm = T)) -> 
-  patent_diversity_tech
+patent_number |> 
+  drop_na(appln_auth_iso3, appln_filing_year) |> 
+  left_join(patent_diverse_sum |> drop_na(appln_auth_iso3, appln_filing_year), 
+            by = c("appln_auth_iso3", "appln_filing_year")) ->
+  patent_diverse_number
 
-patent_long |> 
-  group_by(Origin, ccode, year) |> 
-  summarize(
-    sum_patent = sum(no_patent, na.rm = T)) -> 
-  patent_long_sum
-
-patent_diversity_long <- patent_long_sum |> left_join(
-  patent_diversity, by = c("ccode", "year")
-)
-
-patent_diversity_long_tech <- patent_long_sum |> left_join(
-  patent_diversity_tech, by = c("ccode", "year")
-)
-
-
-patent_diversity_long <- 
-  patent_diversity_long |> 
-  mutate(diversity = replace_na(diversity, 0))
-
-patent_diversity_long_tech <-
-  patent_diversity_long_tech |> 
-  mutate(diversity = replace_na(diversity, 0))
-
-
-patent_diversity_long |> 
-  mutate(year = as.numeric(year)) |> 
-  left_join(vdem |> dplyr::select(COWcode, year, contains("6C")),
-            by = c("ccode" = "COWcode", "year")) |> 
-  group_by(year, e_regionpol_6C) |> 
-  drop_na(e_regionpol_6C) |> 
-  summarize(mean_div = mean(diversity, na.rm = T)) |> 
-  mutate(region = factor(e_regionpol_6C,
-                         levels = c(1, 2, 3, 4, 5, 6),
-                         labels = c("Eastern Europe\n&Central Asia",
-                                    "Latin America\n&the Caribbean", 
-                                    "MENA",
-                                    "Sub-Saharan Africa",
-                                    "Western Europe\n&North America",
-                                    "Asia\n&Pacific"))) |> 
-  ggplot(aes(x = year, y = mean_div, color = region)) +
-  geom_line(show.legend = F) +
-  labs(y = "Average of the diversity in technology patents",
-       x = "Year") +
-  facet_wrap(~region)
-
-patent_diversity_long_tech |> 
-  mutate(year = as.numeric(year)) |> 
-  left_join(vdem |> dplyr::select(COWcode, year, contains("6C")),
-            by = c("ccode" = "COWcode", "year")) |> 
-  group_by(year, e_regionpol_6C, Class) |> 
-  drop_na(e_regionpol_6C) |> 
-  summarize(mean_div = mean(diversity, na.rm = T)) |> 
-  mutate(region = factor(e_regionpol_6C,
-                         levels = c(1, 2, 3, 4, 5, 6),
-                         labels = c("Eastern Europe\n&Central Asia",
-                                    "Latin America\n&the Caribbean", 
-                                    "MENA",
-                                    "Sub-Saharan Africa",
-                                    "Western Europe\n&North America",
-                                    "Asia\n&Pacific"))) |> 
-  drop_na(Class) |> 
-  ggplot(aes(x = year, y = mean_div, color = Class)) +
-  geom_line(show.legend = T) +
-  labs(y = "Average of the diversity in technology patents",
-       x = "Year") +
-  facet_wrap(~region) + theme(
-    legend.title = element_blank(),
-    legend.position = "top")
+head(patent_diverse_number)
 ```
 
-## Sample
-
-### Merge Total Number, Diversities, and Levels of Patents Technologies
-
-The unit of analysis is country-year. I merged the `patent_long_sum` and
-`patent_diversity_long_tech` so that `sample` has two variables:
-`sum_tech_patent` and `diversity`.
-
--   `sum_tech_patent`: The total number of patents published in a given year and
-    country by different levels of technology.
-
--   `diversity`: The number of areas in which patents have been published in a
-    given year and country by different levels of technology.
-
-```{r}
-#| echo: false
-#| message: false
-#| error: false
-#| warning: false
-patent_long |> 
-  mutate(year = as.numeric(year)) |> 
-  group_by(Class, ccode, year) |> 
-  mutate(sum_tech_patent = sum(no_patent, na.rm = T)) ->
-  patent_long_sum
-
-DT::datatable(patent_long_sum)
-DT::datatable(patent_diversity_long_tech)
-
-```
-
-Thus, the baseline sample of patents in technology has five variables including
-`sum_tech_patent` and `diversity`.
-
--   `ccode`: COW code for the country names.
-
--   `year`: It ranges between 1995 and 2022.
-
--   `Class`: three-scale measurements of `Low-tech`, `Middle-tech`, and
-    `High-tech`.
-
-```{r}
-#| code-fold: true
-#| code-summary: "Show the code"
-#| warning: false
-#| message: false
-#| error: false
-patent_long_sum |> ungroup() |> 
-  dplyr::select(-no_patent) |> 
-  left_join(
-    patent_diversity_long_tech |> 
-      mutate(year = as.numeric(year)) |> 
-      ungroup() |> 
-      dplyr::select(-c(Origin, sum_patent)), 
-    by = c("ccode", "year", "Class")) |> 
-    mutate(diversity = replace_na(diversity, 0)) |> 
-  group_by(ccode, year, Class) |> 
-  summarize(
-    sum_tech_patent = mean(sum_tech_patent),
-    diversity = mean(diversity)) ->  sample
-
-DT::datatable(sample)
-```
-
-As the sample data includes `class` variable for the same country-year pairs,
-the number of observations is `r nrow(sample)`.
-
-### Indoctrination
+## Indoctrination
 
 I merge the sample with other data sets from `V-Indoc` and `V-Dem` to include
 variables on indoctrination for the analyses.
@@ -566,9 +325,9 @@ development in theory. I would like to look into `v2xed_ed_inco` and its
 sub-indicators because I expect that indoctrination is more likely to enhance
 compliance and less likely to improve diversity or individual capability.
 
-### Other Covariates
+## Other Covariates
 
-#### Political and Economic Factors
+### Political and Economic Factors
 
 I use `V-Dem` data set to include various political and economic variables.
 
@@ -607,6 +366,8 @@ I use `V-Dem` data set to include various political and economic variables.
 -   `e_gdp`: GDP. Point estimate from latent variable model of Gross Domestic
     Product based on a number of sources.
 
+### Socio-Demogratic and Educational Factors
+
 -   `e_pop`: Population.
 
 -   `e_total_resources_income_pc`: Petroleum, coal, natural gas, and metals
@@ -622,594 +383,555 @@ I use `V-Dem` data set to include various political and economic variables.
 ```{r}
 #| code-fold: true
 #| code-summary: "Show the code"
-#| warning: false
-vindoc_cy_full |> 
-  dplyr::select(country_name, year, 
-                # V-Indoc vars
-                v2xed_ed_inpt, v2xed_ed_poed, v2xed_ed_inco,
-                v2xed_ed_cent, v2edmath) |> 
-  # Mutate cow codes based on country names
-  mutate(ccode = 
-           countrycode::countrycode(country_name, 
-                                    "country.name", "cown")) ->
-  vindoc_sample
-
 vdem |> 
-  dplyr::select(COWcode, year, v2x_polyarchy,
-                v2x_libdem,
-                e_boix_regime, e_gdppc, e_gdp,
-                e_pop,
-                v2peprisch, v2pesecsch, v2petersch,
-                resource_rev =
-                  e_total_resources_income_pc) ->
-  vdem_sample
+  mutate(iso3 = countrycode::countrycode(country_name, "country.name", "iso3c")) ->
+  vdem
 
-sample |> 
-  mutate(year = as.numeric(year)) |> 
-  left_join(vindoc_sample, 
-                         by = c("ccode", "year")) |> 
-  left_join(vdem_sample, 
-            by = c("ccode" = "COWcode", "year")) ->
-  patent_indoc
+vdem |> drop_na(iso3) |> left_join(
+  vindoc_cy_full |> 
+    mutate(iso3 = countrycode::countrycode(country_name, "country.name", "iso3c")) |> 
+    dplyr::select(iso3, year, 
+                  contains("v2xed_ed_inpt"), contains("v2xed_ed_poed"), 
+                  contains("v2xed_ed_inco"),contains("v2xed_ed_con"),
+                  contains("v2edpoledprim"),contains("v2edpoledsec"), 
+                  contains("v2edideol"), contains("v2xed_ed_cent"), 
+                  contains("v2xed_ed_ctag"), contains("v2edcentcurrlm"),
+                  contains("v2edcenttxbooks"), contains("v2edteautonomy"), 
+                  contains("v2edteunionindp"), contains("v2edtehire"), 
+                  contains("v2edtefire"), contains("v2edmath")) |>
+    drop_na(iso3), 
+  by = c("iso3", "year")
+) -> vdem_indoc
 ```
-
-#### Variables on Education, Low- and Middle-level Technologies
-
-In addition to school enrollment, I believe that the amount of educational
-resources provided by governments can have an impact on my dependent variables,
-`diversity` and `number` of patents in various technologies. Because education
-resource allocation clarifies government intervention (or investment) in the
-educational sector. Also, I include several variables that are associated with
-different levels of technology.
-
--   `wdi_araland`: Arable land includes land defined by the FAO as land under
-    temporary crops (double-cropped areas are counted once), temporary meadows
-    for mowing or for pasture, land under market or kitchen gardens, and land
-    temporarily fallow. Land abandoned as a result of shifting cultivation is
-    excluded.
-
--   `wdi_empch`: Children in employment refer to children involved in economic
-    activity for at least one hour in the reference week of the survey.
-
--   `wdi_empind`: Employment in industry as a percentage of all employment.
-    Employment is defined as persons of working age who were engaged in any
-    activity to produce goods or provide services for pay or profit, whether at
-    work during the reference period or not at work due to temporary absence
-    from a job, or to working-time arrangement. The industry sector consists of
-    mining and quarrying, manufacturing, construction, and public utilities
-    (electricity, gas, and water).
-
--   `wdi_expedu`: General government expenditure on education (current, capital,
-    and transfers) is expressed as a percentage of GDP. It includes expenditure
-    funded by transfers from international sources to government. General
-    government usually refers to local, regional and central governments.
-
--   `wdi_expedup`: Expenditure on Primary education, expressed as a percentage
-    of total general government expenditure on education. Divide government
-    expenditure on a given level of education (ex. primary, secondary) by total
-    government expenditure on education (all levels combined).
-
-    -   A high percentage of government expenditure on education spent on a
-        given level denotes a high priority given to that level compared to
-        others. When interpreting this indicator, one should take into account
-        enrollment at that level, and the relative costs per student between
-        different levels of education.
-
--   `wdi_expedus`: Expenditure on Secondary education, expressed as a percentage
-    of total general government expenditure on education. Divide government
-    expenditure on a given level of education (ex. primary, secondary) by total
-    government expenditure on education (all levels combined).
-
-    -   A high percentage of government expenditure on education spent on a
-        given level denotes a high priority given to that level compared to
-        others. When interpreting this indicator, one should take into account
-        enrollment at that level, and the relative costs per student between
-        different levels of education.
-
--   `wdi_expedut`: Expenditure on Tertiary education, expressed as a percentage
-    of total general government expenditure on education. Divide government
-    expenditure on a given level of education (ex. primary, secondary) by total
-    government expenditure on education (all levels combined).
-
-    -   A high percentage of government expenditure on education spent on a
-        given level denotes a high priority given to that level compared to
-        others. When interpreting this indicator, one should take into account
-        enrollment at that level, and the relative costs per student between
-        different levels of education.
-
--   `wdi_expstup`: Government expenditure per student, primary (% of GDP per
-    capita). Government expenditure per student is the average general
-    government expenditure (current, capital, and transfers) per student in the
-    primary level of education, expressed as a percentage of GDP per capita.
-
--   `wdi_expstus`: Government expenditure per student, secondary (% of GDP per
-    capita). Government expenditure per student is the average general
-    government expenditure (current, capital, and transfers) per student in the
-    secondary level of education, expressed as a percentage of GDP per capita.
-
--   `wdi_expstut`: Government expenditure per student, tertiary (% of GDP per
-    capita). Government expenditure per student is the average general
-    government expenditure (current, capital, and transfers) per student in the
-    given tertiary of education, expressed as a percentage of GDP per capita.
-
--   `wdi_fdiin`/`wdi_fdiout`: Foreign direct investment, net inflows or net
-    outflows (% of GDP)
 
 ```{r}
 #| code-fold: true
 #| code-summary: "Show the code"
+vdem_indoc |> 
+  left_join(patent_diverse_number, 
+            by = c("iso3" = "appln_auth_iso3", 
+                   "year" = "appln_filing_year")) ->
+  vdem_patent
+
+library(rqog)
+qog <- read_qog(which_data = "standard", data_type = "time-series")
+
 qog |> 
-  dplyr::select(
-    ccodecow, year,
-    wdi_lfpedua, wdi_expedup, wdi_expedus, wdi_expedut,
-    wdi_expstup, wdi_expstus, wdi_expstut, wdi_agrland, 
-    wdi_empch, wdi_fdiin, wdi_fdiout) ->
-  qog_sub
+  dplyr::select(ccodealp, year, wdi_fdiin, wdi_expstup, 
+                wdi_expstus, wdi_expstut) -> subqog
 
-patent_indoc |> left_join(
-  qog_sub, by = c("ccode" = "ccodecow", "year")) ->
-  patent_indoc
+vdem_patent |> left_join(
+  subqog |> drop_na(ccodealp, year),
+  by = c("iso3" = "ccodealp", "year")
+) -> vdem_patent
 ```
 
-#### Potential Variables in Mind
-
--   The number of Ph.D. in a country and given year.
-
--   Comparable measurements of each different economic sectors (1st-2nd-3rd
-    industrial stages)
-
--   World Development Indicator measurements have too many missings.
-
-## Variables Manipulation
-
-### 1-year Lagged
-
-All the explanatory variables take 1-year lagged values and I manipulate two
-lagged dependent variables for `diversity` and `number`. You can download
-primarily merged sample
-[here](https://www.dropbox.com/s/u621g1xymtqnub9/sample.csv?dl=0). Below shows
-the first 100 rows of the sample data.
+### Trends in Technology Patents in Numbers
 
 ```{r}
-#| code-fold: true
-#| code-summary: "Show the code"
-patent_indoc |> 
-  group_by(ccode) |> 
-  mutate(lag_patent = dplyr::lag(sum_tech_patent, n = 1, order_by = year),
-         lag_divers = dplyr::lag(diversity, n = 1, order_by = year),
-         lag_inpt = dplyr::lag(v2xed_ed_inpt, n = 1, order_by = year),
-         lag_poed = dplyr::lag(v2xed_ed_poed, n = 1, order_by = year),
-         lag_inco = dplyr::lag(v2xed_ed_inco, n = 1, order_by = year),
-         lag_cent = dplyr::lag(v2xed_ed_cent, n = 1, order_by = year),
-         lag_math = dplyr::lag(v2edmath, n = 1, order_by = year),
-         lag_edi = dplyr::lag(v2x_polyarchy, n = 1, order_by = year),
-         lag_libdem = dplyr::lag(v2x_libdem, n = 1, order_by = year),
-         lag_regime = dplyr::lag(e_boix_regime, n = 1, order_by = year),
-         lag_gdp = dplyr::lag(e_gdp, n = 1, order_by = year),
-         lag_lngdp = dplyr::lag(log(e_gdp+1), n = 1, order_by = year),
-         lngdp = log(e_gdp + 1),
-         diff_gdp = e_gdp - lag_gdp,
-         gdpgrth = diff_gdp/lag_gdp,
-         lag_lngdppc  = dplyr::lag(log(e_gdppc+1), n = 1, order_by = year),
-         lag_pop = dplyr::lag(log(e_pop), n = 1, order_by = year),
-         lag_resrev = dplyr::lag(resource_rev/e_gdp, n = 1, order_by = year),
-         lag_prisch = dplyr::lag(v2peprisch, n = 1, order_by = year),
-         lag_secsch = dplyr::lag(v2pesecsch, n = 1, order_by = year),
-         lag_tersch = dplyr::lag(v2petersch, n = 1, order_by = year),
-         lag_advwork = dplyr::lag(wdi_lfpedua, n = 1, order_by = year),
-         lag_advpriwork = dplyr::lag(wdi_expedup, n = 1, order_by = year),
-         lag_advsecwork = dplyr::lag(wdi_expedus, n = 1, order_by = year),
-         lag_advterwork = dplyr::lag(wdi_expedut, n = 1, order_by = year),
-         lag_stupriexp = dplyr::lag(wdi_expstup, n = 1, order_by = year),
-         lag_stusecexp = dplyr::lag(wdi_expstus, n = 1, order_by = year),
-         lag_stuterexp = dplyr::lag(wdi_expstut, n = 1, order_by = year),
-         lag_childwrok = dplyr::lag(wdi_empch, n = 1, order_by = year),
-         lag_agrland = dplyr::lag(wdi_agrland, n = 1, order_by = year),
-         lag_fdiin = dplyr::lag(wdi_fdiin, n = 1, order_by = year),
-         lag_fdiout = dplyr::lag(wdi_fdiout, n = 1, order_by = year)) -> patent_indoc
-
-DT::datatable(patent_indoc[1:100, ])
-# write_csv(patent_indoc, "data/sample.csv")
-```
-
-## Preliminary Analyses
-
-Simply, let us model explaining the number of patents of technologies. $i$ is a
-state, $t$ is a given year, and $k$ is the level of technology
-$\in \{\text{Low, Middle, High}\}$.
-
-$$
-\text{\# of Patents}_{i, t, k} \sim f(\text{Indoctrination}, \text{economic capacity}, \text{other covariates})
-$$
-
-$$
-\text{Diversity}_{i, t, k}\sim f(\text{Indoctrination}, \text{economic capacity}, \text{other covariates})
-$$
-
-```{r}
-#| include: false
-patent_indoc |> ungroup() |> 
-  group_by(ccode, year) |> 
-  mutate(sum_patent = sum(sum_tech_patent, na.rm = T),
-         sum_divers = sum(diversity, na.rm = T)) |> 
-  ungroup() |> group_by(ccode) |> 
-  mutate(lag_sumpatent = dplyr::lag(sum_patent, order_by = year, n = 1),
-         lag_sumdivers = dplyr::lag(sum_divers, order_by = year, n = 1)) ->
-  patent_indoc
-```
-
-### Hypothesis 1 without Ctrls
-
-```{r}
-#| results: hide
-#| code-fold: true
-#| code-summary: "Show the code"
-# Model for H1: Indoctrination leads to less advanced technological developments
-#               because indoctrination emphasizes increasing citizens'
-#               compliance with the regime.
-library(estimatr)
-
-lm_robust(log(sum_patent+1) ~ 
-     lag_inco + as.factor(ccode) + as.factor(year), 
-     se_type = "stata", 
-   data = patent_indoc) -> h1m1
-
-lm_robust(log(sum_patent+1) ~ 
-     lag_cent + as.factor(ccode) + as.factor(year), 
-     se_type = "stata",
-   data = patent_indoc) -> h1m2
-
-lm_robust(log(sum_patent+1) ~ 
-     lag_inco + lag_lngdppc + as.factor(ccode) + as.factor(year), 
-     se_type = "stata",
-   data = patent_indoc) -> h1m3
-
-lm_robust(log(sum_patent+1) ~ 
-     lag_cent + lag_lngdppc + as.factor(ccode) + as.factor(year), 
-     se_type = "stata",
-   data = patent_indoc) -> h1m4
-
-lm_robust(log(sum_patent+1) ~ 
-     lag_inco*lag_lngdppc + as.factor(ccode) + as.factor(year), 
-     se_type = "stata",
-   data = patent_indoc) -> h1m5
-
-lm_robust(log(sum_patent+1) ~ 
-     lag_cent*lag_lngdppc + as.factor(ccode) + as.factor(year), 
-     se_type = "stata",
-   data = patent_indoc) -> h1m6
-```
-
-```{r}
-#| results: asis
-#| code-fold: true
-#| code-summary: "Show the code"
-texreg::htmlreg(
-  list(h1m1, h1m2, h1m3, h1m4, h1m5, h1m6),
-  include.ci = F,
-  omit.coef = "as.factor",
-  custom.coef.names = 
-    c("(Intercept)" = "(Constant)",
-      "lag_inco" = "Coherent Indoctrination",
-      "lag_cent" = "Centralized Education",
-      "lag_lngdppc" = "Ln(GDPpc)",
-      "lag_inco:lag_lngdppc" = "Coherence&#215;Ln(GDPpc)",
-      "lag_cent:lag_lngdppc" = "Centralization&#215;Ln(GDPpc)"),
-  reorder.coef = c(2, 3, 5, 6, 4, 1),
-  custom.gof.rows = list(
-    "Country Fixed Effects" =
-      c("&#10003;","&#10003;", "&#10003;",
-        "&#10003;","&#10003;", "&#10003;") ,
-    "Year Fixed Effects" =
-      c("&#10003;","&#10003;", "&#10003;",
-        "&#10003;","&#10003;", "&#10003;")),
-  caption = "Indoctrination, Economic Capacity, and 
-  Intellectual Property Development<br>
-  (DV = # of patents in general / without ctrls / 
-  with robust clustered SE)")
-```
-
-```{r}
-#| include: false
-patent_indoc |> ungroup() |> 
-  group_by(ccode, year) |> 
-  mutate(sum_patent = sum(sum_tech_patent, na.rm = T),
-         sum_divers = sum(diversity, na.rm = T)) |> 
-  ungroup() |> group_by(ccode) |> 
-  mutate(lag_sumpatent = dplyr::lag(sum_patent, order_by = year, n = 1),
-         lag_sumdivers = dplyr::lag(sum_divers, order_by = year, n = 1)) ->
-  patent_indoc
-```
-
-### Hypothesis 1 with Ctrls
-
-```{r}
-#| results: hide
-#| code-fold: true
-#| code-summary: "Show the code"
-#| warning: false
-#| message: false
-#| error: false
-# Model for H1: Indoctrination leads to less advanced technological developments
-#               because indoctrination emphasizes increasing citizens'
-#               compliance with the regime.
-
-var_list <- patent_indoc |> dplyr::select(contains("lag_")) |> names()
-
-for (i in 1:8) {
-  manual <- "log(sum_patent+1) ~ lag_inco + lag_lngdppc + as.factor(ccode) + as.factor(year)"
-  add <- dput(var_list[c(9:11, 15, 16, 19, 23, 26)])
-  myformula <- as.formula(paste(manual, "+",  add[i], collapse =  "+"))
-  assign(paste0("h1", "ctrl", i),
-         lm_robust(myformula, 
-                   se_type = "stata", 
-   data = patent_indoc))
-  }
-```
-
-```{r}
-#| results: asis
-#| echo: false
-texreg::htmlreg(
-  list(h1ctrl1, h1ctrl2, h1ctrl3, h1ctrl4, 
-       h1ctrl5, h1ctrl6, h1ctrl7, h1ctrl8),
-  include.ci = F,
-  omit.coef = "as.factor",
-  custom.coef.names = 
-    c("(Intercept)" = "(Constant)",
-      "lag_inco" = "Coherent Indoctrination",
-      "lag_lngdppc" = "Ln(GDPpc)",
-      "lag_edi" = "Electoral Democracy",
-      "lag_libdem" = "Liberal Democracy",
-      "lab_regime" = "Democracy",
-      "lag_pop" = "Population",
-      "lag_resrev" = "Resource Dependence",
-      "lag_tersch" = "Tertiary School Enrollment",
-      "lag_advterwork" = "Tertiary Worker (% Employee)",
-      "lag_stuterexp" = "Govt exp. per student, tertiary"),
-  reorder.coef = c(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 1),
-  custom.gof.rows = list(
-    "Country Fixed Effects" =
-      c("&#10003;","&#10003;", "&#10003;",
-        "&#10003;","&#10003;", "&#10003;",
-        "&#10003;", "&#10003;") ,
-    "Year Fixed Effects" =
-      c("&#10003;","&#10003;", "&#10003;",
-        "&#10003;","&#10003;", "&#10003;",
-        "&#10003;", "&#10003;")),
-  caption = "Indoctrination, Economic Capacity, and 
-  Intellectual Property Development<br>
-  (DV = # of patents in general / 
-  Cohensive Indoctrination with ctrls & robust clustered SE)")
-```
-
-Coherent indoctrination significantly decreases the number of patents while
-economic capacity increases the patent numbers. Holding these two main
-explanatory variables constant, I establish eight models, including individual
-control variables as well as the main explanatory variables. Thus, these eight
-models show the effect of added control variable on the dependent variable when
-we hold the main explanatory variables constant.
-
--   Model 1: One unit increase of electoral democracy index is associated with
-    `r as.numeric(round(coef(h1ctrl1)[170], 3))` percent point decrease in the
-    number of patents on average.
-
--   Model 2: One unit increase of liberal democracy index is associated with
-    `r as.numeric(round(coef(h1ctrl2)[170], 3))` percent point decrease in the
-    number of patents on average.
-
--   Model 3: Democracies have `r as.numeric(round(coef(h1ctrl3)[170], 3))`
-    percent point less patents than non-democracies on average.
-
--   Model 4: One unit increase in population is associated with
-    `r as.numeric(round(coef(h1ctrl4)[170], 3))` percent point increase in the
-    number of patents on average.
-
--   Model 6: One unit increase in tertiary school enrollment is associated with
-    `r as.numeric(round(coef(h1ctrl6)[115], 3))` percent point increase in the
-    number of patents on average.
-
--   Model 7: One unit increase in proportion of tertiary workers in the total
-    employee is associated with `r as.numeric(round(coef(h1ctrl7)[155], 3))`
-    percent point increase in the number of patents on average.
-
--   Model 8: One unit increase in proportion of government expenditure per
-    student in the tertiary education is associated with
-    `r as.numeric(round(coef(h1ctrl8)[150], 3))` percent point increase in the
-    number of patents on average.
-
-```{r}
-#| results: hide
-#| code-fold: true
-#| code-summary: "Show the code"
-#| warning: false
-#| message: false
-#| error: false
-# Model for H1: Indoctrination leads to less advanced technological developments
-#               because indoctrination emphasizes increasing citizens'
-#               compliance with the regime.
-lm_robust(
-  log(sum_patent+1) ~ 
-    lag_inco + lag_lngdppc + 
-    lag_edi + lag_pop + 
-    lag_resrev + lag_tersch + 
-    lag_advterwork + lag_stuterexp +
-    as.factor(ccode) + as.factor(year), 
-                   se_type = "stata", 
-   data = patent_indoc) -> h1full1
-
-lm_robust(
-  log(sum_patent+1) ~ 
-    lag_inco + lag_lngdppc + 
-    lag_libdem + lag_pop + 
-    lag_resrev + lag_tersch + 
-    lag_advterwork + lag_stuterexp +
-    as.factor(ccode) + as.factor(year), 
-                   se_type = "stata", 
-   data = patent_indoc) -> h1full2
-
-lm_robust(
-  log(sum_patent+1) ~ 
-    lag_inco + lag_lngdppc + 
-    lag_regime + lag_pop + 
-    lag_resrev + lag_tersch + 
-    lag_advterwork + lag_stuterexp +
-    as.factor(ccode) + as.factor(year), 
-                   se_type = "stata", 
-   data = patent_indoc) -> h1full3
-
-lm_robust(
-  log(sum_patent+1) ~ 
-    lag_inco*lag_lngdppc + 
-    lag_edi + lag_pop + 
-    lag_resrev + lag_tersch + 
-    lag_advterwork + lag_stuterexp +
-    as.factor(ccode) + as.factor(year), 
-                   se_type = "stata", 
-   data = patent_indoc) -> h1full4
-
-lm_robust(
-  log(sum_patent+1) ~ 
-    lag_inco*lag_lngdppc + 
-    lag_libdem + lag_pop + 
-    lag_resrev + lag_tersch + 
-    lag_advterwork + lag_stuterexp +
-    as.factor(ccode) + as.factor(year), 
-                   se_type = "stata", 
-   data = patent_indoc) -> h1full5
-
-lm_robust(
-  log(sum_patent+1) ~ 
-    lag_inco*lag_lngdppc + 
-    lag_regime + lag_pop + 
-    lag_resrev + lag_tersch + 
-    lag_advterwork + lag_stuterexp +
-    as.factor(ccode) + as.factor(year), 
-                   se_type = "stata", 
-   data = patent_indoc) -> h1full6
-
-lm_robust(
-  log(sum_patent+1) ~ 
-    lag_inco*lag_edi + lag_lngdppc + 
-    lag_pop + 
-    lag_resrev + lag_tersch + 
-    lag_advterwork + lag_stuterexp +
-    as.factor(ccode) + as.factor(year), 
-                   se_type = "stata", 
-   data = patent_indoc) -> h1full7
-
-lm_robust(
-  log(sum_patent+1) ~ 
-    lag_inco*lag_libdem + lag_lngdppc + 
-    lag_pop + 
-    lag_resrev + lag_tersch + 
-    lag_advterwork + lag_stuterexp +
-    as.factor(ccode) + as.factor(year), 
-                   se_type = "stata", 
-   data = patent_indoc) -> h1full8
-
-lm_robust(
-  log(sum_patent+1) ~ 
-    lag_inco*lag_regime + lag_lngdppc + 
-    lag_pop + 
-    lag_resrev + lag_tersch + 
-    lag_advterwork + lag_stuterexp +
-    as.factor(ccode) + as.factor(year), 
-                   se_type = "stata", 
-   data = patent_indoc) -> h1full9
-```
-
-```{r}
-#| results: asis
+#| eval: true
 #| code-fold: true
 #| code-summary: "Show the code"
 #| message: false
 #| warning: false
 #| error: false
+#| layout-ncol: 1
+#| fig-cap: "Number of the patent by regime (yearly)"
+#| fig-subcap: 
+#|   - "All countries"
+#|   - "Without China and Russia"
 
-texreg::htmlreg(
-  list(h1full1, h1full2, h1full3, h1full4, 
-       h1full5, h1full6, h1full7, h1full8, h1full9),
-  include.ci = F,
-  omit.coef = "as.factor",
-  custom.coef.names = 
-    c("(Intercept)" = "(Constant)",
-      "lag_inco" = "Coherent Indoctrination",
-      "lag_lngdppc" = "Ln(GDPpc)",
-      "lag_edi" = "Electoral Democracy",
-      "lag_pop" = "Population",
-      "lag_resrev" = "Resource Dependence",
-      "lag_tersch" = "Tertiary School Enrollment",
-      "lag_advterwork" = "Tertiary Worker (% Employee)",
-      "lag_stuterexp" = "Govt exp. per student, tertiary",
-      "lag_libdem" = "Liberal Democracy",
-      "lab_regime" = "Democracy",
-      "lng_inco:lag_lngdppc" = "Coherence&#215;Ln(GDppc)",
-      "lng_inco:lag_edi" = "Coherence&#215;EDI",
-      "lng_inco:lag_libdem" = "Coherence&#215;Liberal Democracy",
-      "lng_inco:lag_regime" = "Coherence&#215;Democracy(=1)"),
-  reorder.coef = c(2, 3, 4, 10, 11, 12, 13, 14, 15, 5, 6, 7, 8, 9,  1),
-  custom.gof.rows = list(
-    "Country Fixed Effects" =
-      c("&#10003;","&#10003;", "&#10003;",
-        "&#10003;","&#10003;", "&#10003;",
-        "&#10003;", "&#10003;", "&#10003;") ,
-    "Year Fixed Effects" =
-      c("&#10003;","&#10003;", "&#10003;",
-        "&#10003;","&#10003;", "&#10003;",
-        "&#10003;", "&#10003;", "&#10003;")),
-  caption = "Indoctrination, Economic Capacity, and 
-  Intellectual Property Development<br>
-  (DV = # of patents in general / 
-  Cohensive Indoctrination with interactions ctrls <br> & robust clustered SE)")
+### All countries
+vdem_patent |> 
+  group_by(e_boix_regime, year) |> 
+  summarize(mean = mean(patent_n, na.rm = T)) |> dplyr::filter(year > 1979) |> 
+  mutate(regime = factor(
+    e_boix_regime, levels = c(0, 1),
+    labels = c("Autocracy", "Democracy")
+  )) ->
+  sum_regime_patent
+
+end_patent_n <- sum_regime_patent |> 
+  drop_na(mean, regime) |> 
+  dplyr::filter(year == max(year, na.rm = T))
+
+sum_regime_patent |> drop_na() |> 
+  mutate(regime = factor(
+    e_boix_regime, levels = c(0, 1),
+    labels = c("Autocracy", "Democracy")  
+    )) |> 
+  ggplot(aes(x = year, y = mean, color = regime, group = regime)) +
+  geom_line(show.legend = F) + 
+  ggrepel::geom_label_repel(
+    data = end_patent_n,
+    aes(label = regime, x = year, y = mean), show.legend = F) +
+  geom_point(shape = 21, fill = "white", show.legend = F) +
+  scale_x_continuous(breaks = c(seq(1980, 2020, 2))) +
+  scale_y_continuous(breaks = c(seq(0, 1600, 100)), limits = c(0, 550)) +
+  theme_bw()
+
+### Without Russia and China
+
+vdem_patent |> dplyr::filter(!COWcode %in% c(365, 710)) |> 
+  group_by(e_boix_regime, year) |> 
+  summarize(mean = mean(patent_n, na.rm = T)) |> dplyr::filter(year > 1979) |> 
+  mutate(regime = factor(
+    e_boix_regime, levels = c(0, 1),
+    labels = c("Autocracy", "Democracy")
+  )) ->
+  sum_regime_patent_nochrs
+
+end_patent_n_nochrs <- sum_regime_patent_nochrs |> 
+  drop_na(mean, regime) |> 
+  dplyr::filter(year == max(year, na.rm = T))
+
+sum_regime_patent_nochrs |> drop_na() |> 
+  mutate(regime = factor(
+    e_boix_regime, levels = c(0, 1),
+    labels = c("Autocracy", "Democracy")  
+    )) |> 
+  ggplot(aes(x = year, y = mean, color = regime, group = regime)) +
+  geom_line(show.legend = F) + 
+  ggrepel::geom_label_repel(
+    data = end_patent_n_nochrs,
+    aes(label = regime, x = year, y = mean), show.legend = F) +
+  geom_point(shape = 21, fill = "white", show.legend = F) +
+  scale_x_continuous(breaks = c(seq(1980, 2020, 2))) +
+  scale_y_continuous(breaks = c(seq(0, 1600, 100)), limits = c(0, 550)) +
+  theme_bw()
 ```
 
+### Trends in Technology Patents in Diversity
+
 ```{r}
-# Model for H2a: Indoctrination increases low-level technological developments while decreasing high-level technological developments.
+#| eval: true
+#| code-fold: true
+#| code-summary: "Show the code"
+#| message: false
+#| warning: false
+#| error: false
+#| layout-ncol: 2
+#| fig-cap: "Diversity of the patent by regime (yearly)"
+#| fig-subcap: 
+#|   - "All countries"
+#|   - "Without China and Russia"
 
-# Model for H2b: Indoctrination increases technological developments, but decreases diversity of technological developments.
+### All countries
+vdem_patent |> 
+  group_by(e_boix_regime, year) |> 
+  summarize(mean = mean(diverse, na.rm = T)) |> dplyr::filter(year > 1979) |> 
+  mutate(regime = factor(
+    e_boix_regime, levels = c(0, 1),
+    labels = c("Autocracy", "Democracy")
+  ))->
+  sum_regime_diverse
 
-# Model for H3: The effect of indoctrination on technological developments is conditional on the economic capacity of a state.
+end_diverse_n <- sum_regime_diverse |> 
+  drop_na(mean, regime) |> 
+  dplyr::filter(year == max(year, na.rm = T))
+
+sum_regime_diverse |> drop_na() |> 
+  mutate(regime = factor(
+    e_boix_regime, levels = c(0, 1),
+    labels = c("Autocracy", "Democracy")
+  )) |> 
+  ggplot(aes(x = year, y = mean, color = regime, group = regime)) +
+  geom_line(show.legend = F) + 
+  ggrepel::geom_label_repel(
+    data = end_diverse_n,
+    aes(label = regime, x = year, y = mean), show.legend = F) +
+  geom_point(shape = 21, fill = "white", show.legend = F) +
+  scale_x_continuous(breaks = c(seq(1980, 2020, 2))) +
+  scale_y_continuous(breaks = c(seq(0, 36, 2)), limits = c(20, 30)) +
+  theme_bw()
+
+### Without China and Russia
+vdem_patent |> dplyr::filter(!COWcode %in% c(365, 710)) |> 
+  group_by(e_boix_regime, year) |> 
+  summarize(mean = mean(diverse, na.rm = T)) |> dplyr::filter(year > 1979) |> 
+  mutate(regime = factor(
+    e_boix_regime, levels = c(0, 1),
+    labels = c("Autocracy", "Democracy")
+  ))->
+  sum_regime_diverse_nochrs
+
+
+end_diverse_n_nochrs <- sum_regime_diverse_nochrs |> 
+  drop_na(mean, regime) |> 
+  dplyr::filter(year == max(year, na.rm = T))
+
+sum_regime_diverse_nochrs |> drop_na() |> 
+  mutate(regime = factor(
+    e_boix_regime, levels = c(0, 1),
+    labels = c("Autocracy", "Democracy")
+  )) |> 
+  ggplot(aes(x = year, y = mean, color = regime, group = regime)) +
+  geom_line(show.legend = F) + 
+  ggrepel::geom_label_repel(
+    data = end_diverse_n_nochrs,
+    aes(label = regime, x = year, y = mean), show.legend = F) +
+  geom_point(shape = 21, fill = "white", show.legend = F) +
+  scale_x_continuous(breaks = c(seq(1980, 2020, 2))) +
+  scale_y_continuous(breaks = c(seq(0, 36, 2)), limits = c(20, 30)) +
+  theme_bw()
 ```
 
+The patent number and diversity show similar patterns:
+
+1.  Democracy, on average, has greater number and diversity in patents than
+    autocracy.
+2.  The variations in patent number and diversity of autocracy are much greater
+    than democracy.
+    -   Some autocracies yield greater extent of patent number and diversity
+        than democracies.
+
+### Distribution of Dependent Variable
+
 ```{r}
-#| eval: false
-#| echo: false
-lm(log(sum_patent+1) ~ v2xed_ed_inpt + I(v2xed_ed_inpt^2) + gdpgrth + log(lag_patent + 1) + 
-     resource_rev + e_gdppc + v2edmath + e_boix_regime + 
-     #v2x_libdem +
-     as.factor(ccode) + as.factor(year), 
-   data = patent_indoc |> 
-     dplyr::filter(Class %in% "Middle-tech")) |> 
-#  texreg::screenreg(omit.coef = "as.factor") 
-  ggeffects::ggpredict(terms = c("v2xed_ed_inpt")) |> plot()
-
-lm(log(sum_patent+1) ~ v2xed_ed_inpt + I(v2xed_ed_inpt^2) + gdpgrth + log(lag_patent + 1) + 
-     resource_rev + e_gdppc  + v2edmath + e_boix_regime + 
-     #v2x_libdem +
-     as.factor(ccode) + as.factor(year), data = patent_indoc |> dplyr::filter(Class %in% "High-tech")) |> 
-  #texreg::screenreg(omit.coef = "as.factor") 
-  ggeffects::ggpredict(terms = c("v2xed_ed_inpt")) |> plot()
-
-
-
-lm(diversity ~ v2xed_ed_inpt + I(v2xed_ed_inpt^2)+ gdpgrth + log(lag_patent + 1) + 
-     resource_rev + e_gdppc  + v2edmath + e_boix_regime + 
-     #v2x_libdem +
-     as.factor(ccode) + as.factor(year), 
-   data = patent_indoc) |> 
-  # texreg::screenreg(omit.coef = "as.factor") 
-  ggeffects::ggpredict(terms = c("v2xed_ed_inpt")) |> plot()
-
-
-library(janitor)
-
-patent_indoc |> ungroup() |> 
+#| eval: true
+#| code-fold: true
+#| code-summary: "Show the code"
+#| message: false
+#| warning: false
+#| error: false
+#| layout-ncol: 1
+#| fig-cap: "Distribution of the patent by regime (yearly)"
+#| fig-subcap: 
+#|   - "Number of patent"
+#|   - "Diversity of patent"
+vdem_patent |> 
   mutate(
-    indoc = if_else(v2xed_ed_inpt <= quantile(v2xed_ed_inpt, probs = 0.2, na.rm = T), "Low_indoc",
-                    if_else(v2xed_ed_inpt >= quantile(v2xed_ed_inpt, probs = 0.8, na.rm = T), "High_indoc", "Middle_indoc")),
-    indoc = factor(indoc, levels = c("Low_indoc", "Middle_indoc", "High_indoc"))) |> 
-  group_by(Class, indoc) |> drop_na(indoc) |> 
-  summarize(mean_patent = mean(sum_patent, na.rm = T))
+    regime = if_else(e_boix_regime == 1L, "Democracy",
+                     if_else(e_boix_regime == 0L, "Autocracy", NA_character_)),
+    regime = factor(regime,
+                    levels = c("Autocracy", "Democracy"))) -> vdem_patent
+vdem_patent |>   
+  drop_na(regime) |> 
+  ggplot(aes(x = year, y = log(patent_n+1), group = year, color = regime)) +
+  geom_boxplot(show.legend = F) + facet_wrap(~regime)
 
+vdem_patent |>   
+  drop_na(regime) |> 
+  ggplot(aes(x = year, y = diverse, group = year, color = regime)) +
+  geom_boxplot(show.legend = F) + facet_wrap(~regime)
+```
+
+```{r}
+#| eval: true
+#| code-fold: true
+#| code-summary: "Show the code"
+#| message: false
+#| warning: false
+#| error: false
+#| layout-ncol: 1
+#| fig-cap: "Distribution of the patent by regime (overall)"
+#| fig-subcap: 
+#|   - "All countries"
+#|   - "Without China and Russia"
+
+vdem_patent |>   
+  drop_na(regime) |> dplyr::select(regime, patent_n, diverse, year) |> 
+  mutate(lnpatent_n = log(patent_n + 1)) |> 
+  tidyr::pivot_longer(
+    cols = c("lnpatent_n", "diverse"),
+    names_to = "patent_type",
+    values_to = "value"
+  ) |> dplyr::filter(year > 1979) |> 
+  mutate(patent_type = 
+           factor(patent_type, 
+                  levels = c("lnpatent_n", "diverse"),
+                  labels = c("Patent Number", "Patent Diversity"))) |> 
+  ggplot(aes(x = value, fill = regime)) +
+  geom_density(alpha = 0.7)  +
+  facet_wrap(~patent_type, scales = "free", ncol = 1) +
+  theme(legend.position = "top")
+
+vdem_patent |>  dplyr::filter(!COWcode %in% c(365, 710)) |> 
+  drop_na(regime) |> dplyr::select(regime, patent_n, diverse, year) |> 
+  mutate(lnpatent_n = log(patent_n + 1)) |> 
+  tidyr::pivot_longer(
+    cols = c("lnpatent_n", "diverse"),
+    names_to = "patent_type",
+    values_to = "value"
+  ) |> dplyr::filter(year > 1979) |> 
+  mutate(patent_type = 
+           factor(patent_type, 
+                  levels = c("lnpatent_n", "diverse"),
+                  labels = c("Patent Number", "Patent Diversity"))) |> 
+  ggplot(aes(x = value, fill = regime)) +
+  geom_density(alpha = 0.7)  +
+  facet_wrap(~patent_type, scales = "free", ncol = 1) +
+  theme(legend.position = "top", legend.title = element_blank())
+
+```
+
+### Key Predictor
+
+#### Logged number of patents and centralized curriculum (`v2edcentcurrlm`)
+
+```{r}
+#| eval: true
+#| code-fold: true
+#| code-summary: "Show the code"
+#| message: false
+#| warning: false
+#| error: false
+#| layout-ncol: 1
+#| fig-cap: "Bivariate relationship between logged number of patents and centralized curriculum by countries and regimes"
+#| fig-subcap: 
+#|   - "Democracy"
+#|   - "Autocracy"
+
+vdem_patent |> 
+  mutate(iso3 = factor(iso3),
+         year_fa = factor(year),
+         year = as.numeric(as.character(year)),
+         lnpatent = log(patent_n+1)) -> vdem_patent
+
+vdem_patent |> ungroup() |> dplyr::filter(year > "1979") |> 
+  drop_na(year, v2edcentcurrlm.x, regime, lnpatent) |> 
+  dplyr::filter(regime %in% "Democracy") |> 
+  ggplot(aes(x = v2edcentcurrlm.x, y = lnpatent)) + 
+  geom_smooth(method = "lm", se = F, color = futurevisions::futurevisions("mars")[3]) + 
+  geom_point(shape = 21, size = 1, fill = futurevisions::futurevisions("mars")[3]) +
+  labs(x = "Centralized curriculum", 
+       y = "Logged number of patents") +
+  facet_wrap(~iso3)
+
+vdem_patent |> ungroup() |> dplyr::filter(year > "1979") |> 
+  drop_na(year, v2edcentcurrlm.x, regime, lnpatent) |> 
+  dplyr::filter(regime %in% "Autocracy") |> 
+  ggplot(aes(x = v2edcentcurrlm.x, y = lnpatent)) + 
+  geom_smooth(method = "lm", se = F, color = futurevisions::futurevisions("mars")[1]) + 
+  geom_point(shape = 21, size = 1, fill = futurevisions::futurevisions("mars")[1]) +
+  labs(x = "Centralized curriculum", 
+       y = "Diversity of patents") +
+  facet_wrap(~iso3)
+
+```
+
+#### Diversity of patents and centralized curriculum (`v2edcentcurrlm`)
+
+```{r}
+#| eval: true
+#| code-fold: true
+#| code-summary: "Show the code"
+#| message: false
+#| warning: false
+#| error: false
+#| layout-ncol: 1
+#| fig-cap: "Bivariate relationship between diversity of patents and centralized curriculum by countries and regimes"
+#| fig-subcap: 
+#|   - "Democracy"
+#|   - "Autocracy"
+
+vdem_patent |> ungroup() |> dplyr::filter(year > "1979") |> 
+  drop_na(year, v2edcentcurrlm.x, regime, diverse) |> 
+  dplyr::filter(regime %in% "Democracy") |> 
+  ggplot(aes(x = v2edcentcurrlm.x, y = diverse)) + 
+  geom_smooth(method = "lm", se = F, color = futurevisions::futurevisions("mars")[3]) + 
+  geom_point(shape = 21, size = 1, fill = futurevisions::futurevisions("mars")[3]) +
+  labs(x = "Centralized curriculum", 
+       y = "Logged number of patents") +
+  facet_wrap(~iso3)
+
+vdem_patent |> ungroup() |> dplyr::filter(year > "1979") |> 
+  drop_na(year, v2edcentcurrlm.x, regime, diverse) |> 
+  dplyr::filter(regime %in% "Autocracy") |> 
+  ggplot(aes(x = v2edcentcurrlm.x, y = diverse)) + 
+  geom_smooth(method = "lm", se = F, color = futurevisions::futurevisions("mars")[1]) + 
+  geom_point(shape = 21, size = 1, fill = futurevisions::futurevisions("mars")[1]) +
+  labs(x = "Centralized curriculum", 
+       y = "Diversity of patents") +
+  facet_wrap(~iso3)
+```
+
+#### Logged number of patents and centralized textbook approval (`v2edcenttxbooks`)
+
+```{r}
+#| eval: true
+#| code-fold: true
+#| code-summary: "Show the code"
+#| message: false
+#| warning: false
+#| error: false
+#| layout-ncol: 1
+#| fig-cap: "Bivariate relationship between logged number of patents and centralized textbook approval by countries and regimes"
+#| fig-subcap: 
+#|   - "Democracy"
+#|   - "Autocracy"
+
+vdem_patent |> ungroup() |> dplyr::filter(year > "1979") |> 
+  drop_na(year, v2edcenttxbooks.x, regime, lnpatent) |> 
+  dplyr::filter(regime %in% "Democracy") |> 
+  ggplot(aes(x = v2edcenttxbooks.x, y = lnpatent)) + 
+  geom_smooth(method = "lm", se = F, color = futurevisions::futurevisions("mars")[3]) + 
+  geom_point(shape = 21, size = 1, fill = futurevisions::futurevisions("mars")[3]) +
+  labs(x = "Centralized textbook approval", 
+       y = "Logged number of patents") +
+  facet_wrap(~iso3)
+
+vdem_patent |> ungroup() |> dplyr::filter(year > "1979") |> 
+  drop_na(year, v2edcenttxbooks.x, regime, lnpatent) |> 
+  dplyr::filter(regime %in% "Autocracy") |> 
+  ggplot(aes(x = v2edcenttxbooks.x, y = lnpatent)) + 
+  geom_smooth(method = "lm", se = F, color = futurevisions::futurevisions("mars")[1]) + 
+  geom_point(shape = 21, size = 1, fill = futurevisions::futurevisions("mars")[1]) +
+  labs(x = "Centralized textbook approval", 
+       y = "Logged number of patents") +
+  facet_wrap(~iso3)
+```
+
+#### Diversity of patents and centralized textbook approval (`v2edcenttxbooks`)
+
+```{r}
+#| eval: true
+#| code-fold: true
+#| code-summary: "Show the code"
+#| message: false
+#| warning: false
+#| error: false
+#| layout-ncol: 1
+#| fig-cap: "Bivariate relationship between diversity of patents and centralized textbook approval by countries and regimes"
+#| fig-subcap: 
+#|   - "Democracy"
+#|   - "Autocracy"
+
+vdem_patent |> ungroup() |> dplyr::filter(year > "1979") |> 
+  drop_na(year, v2edcenttxbooks.x, regime, diverse) |> 
+  dplyr::filter(regime %in% "Democracy") |> 
+  ggplot(aes(x = v2edcenttxbooks.x, y = diverse)) + 
+  geom_smooth(method = "lm", se = F, color = futurevisions::futurevisions("mars")[3]) + 
+  geom_point(shape = 21, size = 1, fill = futurevisions::futurevisions("mars")[3]) +
+  labs(x = "Centralized textbook approval", 
+       y = "Diversity of patents") +
+  facet_wrap(~iso3)
+
+vdem_patent |> ungroup() |> dplyr::filter(year > "1979") |> 
+  drop_na(year, v2edcenttxbooks.x, regime, diverse) |> 
+  dplyr::filter(regime %in% "Autocracy") |> 
+  ggplot(aes(x = v2edcenttxbooks.x, y = diverse)) + 
+  geom_smooth(method = "lm", se = F, color = futurevisions::futurevisions("mars")[1]) + 
+  geom_point(shape = 21, size = 1, fill = futurevisions::futurevisions("mars")[1]) +
+  labs(x = "Centralized textbook approval", 
+       y = "Diversity of patents") +
+  facet_wrap(~iso3)
+```
+
+## Preliminary Analysis
+
+### Regression models with robust standard errors
+
+```{r}
+#| eval: true
+#| code-fold: true
+#| code-summary: "Show the code"
+#| message: false
+#| warning: false
+#| error: false
+#| results: asis
+#| tbl-cap: "Centralized curriculum, centralized textbook approval, and number of patents"
+lm_robust(
+  lnpatent ~ (v2edcentcurrlm.x + v2edcenttxbooks.x + v2xed_ed_poed.x) + 
+    e_gdppc + e_pop + 
+    v2peprisch + v2pesecsch + v2petersch + v2stfisccap + wdi_fdiin + 
+    v2edmath.x +
+    iso3 + year,
+  data = vdem_patent |> dplyr::filter(regime == "Democracy"),
+  se = "stata") -> number_demo
+
+lm_robust(
+  lnpatent ~ (v2edcentcurrlm.x + v2edcenttxbooks.x + v2xed_ed_poed.x) + 
+    e_gdppc + e_pop + 
+    v2peprisch + v2pesecsch + v2petersch + v2stfisccap + wdi_fdiin + 
+    v2edmath.x +
+    iso3 + year,
+  data = vdem_patent |> dplyr::filter(regime == "Autocracy"),
+  se = "stata") -> number_auto
+
+lm_robust(
+  lnpatent ~ regime*(v2edcentcurrlm.x + v2edcenttxbooks.x) + v2xed_ed_poed.x + 
+    e_gdppc + e_pop + 
+    v2peprisch + v2pesecsch + v2petersch + v2stfisccap + wdi_fdiin + 
+    v2edmath.x +
+    iso3 + year,
+  data = vdem_patent,
+  se = "stata") -> number_full
+
+lm_robust(
+  diverse ~ v2edcentcurrlm.x + v2edcenttxbooks.x + v2xed_ed_poed.x + 
+    e_gdppc + e_pop + 
+    v2peprisch + v2pesecsch + v2petersch + v2stfisccap + wdi_fdiin + 
+    v2edmath.x +
+    iso3 + year,
+  data = vdem_patent |> dplyr::filter(regime == "Democracy"),
+  se = "stata") -> diverse_demo
+
+lm_robust(
+  diverse ~ v2edcentcurrlm.x + v2edcenttxbooks.x + v2xed_ed_poed.x + 
+    e_gdppc + e_pop + 
+    v2peprisch + v2pesecsch + v2petersch + v2stfisccap + wdi_fdiin + 
+    v2edmath.x +
+    iso3 + year,
+  data = vdem_patent |> dplyr::filter(regime == "Autocracy"),
+  se = "stata") -> diverse_auto
+
+lm_robust(
+  diverse ~ regime*(v2edcentcurrlm.x + v2edcenttxbooks.x) + v2xed_ed_poed.x + 
+    e_gdppc + e_pop + 
+    v2peprisch + v2pesecsch + v2petersch + v2stfisccap + wdi_fdiin + 
+    v2edmath.x +
+    iso3 + year,
+  data = vdem_patent,
+  se = "stata") -> diverse_full
+
+
+coefnames <- c("(Constant)", "Centralized curriculum", 
+               "Centralized textbook approval", 
+               "Political education effort in education", "GDPpc",
+               "Population", "Primary school enrolment", 
+               "Secondary school enrolment", "Tertiary school enrolment",
+               "State fiscal capacity",
+               "Foreign Direct Investment Inflow",
+               "Math and Science", "Democracy",
+               "Democracy$\\times$Centralized curriculum",
+               "Democracy$\\times$Centralized textbook approval")
+texreg::htmlreg(list(number_demo, number_auto, number_full, 
+                       diverse_demo, diverse_auto, diverse_full),
+                  omit.coef = "as.factor|year|iso3", include.ci = F, digits = 3,
+                  custom.model.names = c("M1: Number Democracy",
+                                         "M2: Number Autocracy",
+                                         "M3: Number Full",
+                                         "M4: Diverse Democracy",
+                                         "M5: Diverse Autocracy",
+                                         "M6: Diverse Full"),
+                  reorder.coef = c(2, 3, 4, 13, 14, 15, 12, 5, 6, 7, 8, 9, 10, 11, 1),
+                  custom.coef.names = coefnames,
+                  custom.gof.rows = list(
+                    "Country-fixed" = c("Yes", "Yes", "Yes", "Yes", "Yes", "Yes"),
+                    "Year-fixed" = c("Yes", "Yes", "Yes", "Yes", "Yes", "Yes")
+                  ))
+```
+
+### Marginal effects
+
+```{r}
+#| eval: true
+#| code-fold: true
+#| code-summary: "Show the code"
+#| message: false
+#| warning: false
+#| error: false
+number_full |> 
+  marginaleffects::plot_predictions(condition = list("v2edcenttxbooks.x", "regime"))  + 
+  labs(x = "\nCentralized textbook approval", y = "Ln(Numbers of Patent + 1)\n") +
+  #scale_x_continuous(breaks = c(seq(0, 1, 0.25))) +
+  theme_bw()
+
+
+diverse_full |> 
+  marginaleffects::plot_predictions(condition = list("v2edcentcurrlm.x", "regime"))  + 
+  labs(x = "\nCentralized curriculum", y = "Diversity of patent\n") +
+  #scale_x_continuous(breaks = c(seq(0, 1, 0.25))) +
+  theme_bw()
 ```

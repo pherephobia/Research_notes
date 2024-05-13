@@ -1,0 +1,37 @@
+[
+  {
+    "objectID": "about.html",
+    "href": "about.html",
+    "title": "Qu’est-ce que R Lille ?",
+    "section": "",
+    "text": "R Lille est le groupe des utilisateurs•rices de R de Lille (et sa région) et a été créé début février 2020.\nVous utilisez R pour le travail et/ou le loisir ? Vous êtes curieux, débutant ou expert en R ? Vous êtes localisé sur Lille et sa périphérie, ou simplement de passage ?\nEt plus important encore, vous avez envie d’échanger sur R et les nombreuses possibilités qu’offre ce logiciel et ses plus de 17 milles extensions ?\nSi la réponse est “oui” à l’une de ces questions, rejoignez-nous sur Meetup sans plus tarder !"
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Research Notes for Sanghoon Park",
+    "section": "",
+    "text": "Education or Indoctrination?\n\n\n\n\n\n\n\nPatent\n\n\nTechnology\n\n\nEducation\n\n\nIndoctrination\n\n\n \n\n\n\n\nApril 6, 2023\n\n\nSanghoon Park\n\n\n\n\n\n\nNo matching items"
+  },
+  {
+    "objectID": "posts/2023-04-12-indoc/index.html",
+    "href": "posts/2023-04-12-indoc/index.html",
+    "title": "Education or Indoctrination?",
+    "section": "",
+    "text": "The basic idea of this paper comes from the paper published in American Political Science Review in 2022, Education or Indoctrination? The Violent Origins of Public School Systems in an Era of State-Building. Paglayan (2022) argues that states, in particular non-democracies, experienced mass violence, such as civil war, are more likely to install educational system for the children to enhance their compliance to the regime. Thus, the study examines the relationship between regime type, civil war experience, and education expansion in Latin America.\nHowever, there are several points in Paglayan (2022) that are unresolved or unclear. First, do authoritarian regimes use indoctrination to protect children from potential mass violations following civil war? So, what are the criteria for determining the target of indoctrination? How do autocracies use indoctrination strategically to achieve their goals? Second, is school enrollment a good indicator of indoctrination?\nAlthough the article contains insightful arguments, my question focuses on education and indoctrination. Is it true that they are mutually exclusive? Autocrats can use education to increase compliance by extending it to their children. However, it can also provide an opportunity for children to grow in their own abilities. Thus, I believe that what distinguishes education from indoctrination is determined on the demand side rather than the supply side. If the system’s beneficiaries (or indoctrinated) children have developed their capability, driving the country forward, even indoctrination strategy works as an education."
+  },
+  {
+    "objectID": "posts/2023-04-12-indoc/index.html#intellectual-property",
+    "href": "posts/2023-04-12-indoc/index.html#intellectual-property",
+    "title": "Education or Indoctrination?",
+    "section": "Intellectual property",
+    "text": "Intellectual property\nTo measure the intellectual property, I use the country-year patent data from 1995 to 2023 from World Intellectual Property Organization. What I use is the patent publication data, which are measured as total count by applicant’s origin by technology.\n\n\n\n\n\n\n\nI transformed the data into country-year structure, manipulating COW country codes. Then, I removed the observations that do not have COW country codes from the sample.\n\n\n\n\n\n\n\nIn the sample, WIPO provides Field of technology that the published patents should belong to. There are 35 different technologies of patents in the sample. I rely on Concept of a Technology Classification for Country Comparisons, a report published in WIPO."
+  },
+  {
+    "objectID": "posts/2023-04-12-indoc/index.html#technology-classification",
+    "href": "posts/2023-04-12-indoc/index.html#technology-classification",
+    "title": "Education or Indoctrination?",
+    "section": "Technology classification",
+    "text": "Technology classification\nI used a combination of different criteria to classify the technologies into low-tech, middle-level techs, and high-techs. These criteria include:\n\nComplexity and sophistication of the technology: Generally, the more complex and sophisticated the technology is, the higher the level of tech it belongs to.\nLevel of innovation and research and development (R&D) involved: High-techs are typically associated with cutting-edge innovation and intensive R&D activities, while low-techs are often considered more mature and established technologies.\nEconomic impact and industrial relevance: High-techs are often associated with strategic industries ## and high-value-added products, while low-techs are often associated with more traditional and low-value-added sectors.\n\nBased on these criteria, I classified the technologies into three broad categories as follows:\n\nLow-tech: These are technologies that are relatively simple, mature, and established, and typically involve low levels of innovation and R&D. They are often associated with traditional and low-value-added sectors such as construction, transportation, and textiles.\nMiddle-level techs: These are technologies that are more complex and sophisticated than low-techs but not as cutting-edge and innovative as high-techs. They typically involve moderate levels of innovation and R&D and are associated with a wide range of sectors, such as manufacturing, healthcare, and logistics.\nHigh-techs: These are technologies that are characterized by high levels of innovation and R&D, cutting-edge research and development, and strategic importance for the economy. They are typically associated with high-value-added industries such as biotechnology, information technology, and telecommunications.\n\nYou can find the sample of classified technologies of n = 1,000:"
+  }
+]
